@@ -7,10 +7,8 @@
 import UIKit
 
 class RVScrollView: UIScrollView {
-    var contentView = UIView()
-    
     override init(frame: CGRect) {
-        super.init(frame: .zero)
+        super.init(frame: frame)
         configure()
     }
     
@@ -21,11 +19,8 @@ class RVScrollView: UIScrollView {
     
     
     private func configure() {
+        backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(contentView)
-        
-        contentView.pinToEdges(of: self)
-        
+        keyboardDismissMode = .interactive
     }
 }

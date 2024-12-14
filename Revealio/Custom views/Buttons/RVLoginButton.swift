@@ -6,11 +6,17 @@
 //
 import UIKit
 
-class RVLoginButton: UIButton {
+class RVButton: UIButton {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         configure()
+    }
+    
+    
+    convenience init(colour: UIColor, title: String, systemImageName: String?) {
+        self.init(frame: .zero)
+        set(colour: colour, title: title, systemImageName: systemImageName)
     }
     
     
@@ -21,9 +27,19 @@ class RVLoginButton: UIButton {
     
     private func configure() {
         configuration = .tinted()
-        configuration?.title = "Login"
-        configuration?.cornerStyle = .capsule
-        configuration?.baseBackgroundColor = .systemRed
+        configuration?.cornerStyle = .medium
+        layer.masksToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    
+    private final func set(colour: UIColor, title: String, systemImageName: String?) {
+        configuration?.baseBackgroundColor = colour
+        configuration?.baseForegroundColor = colour
+        configuration?.title = title
+        
+        configuration?.image = UIImage(systemName: systemImageName ?? "")
+        configuration?.imagePadding = 6
+        configuration?.imagePlacement = .trailing
     }
 }
