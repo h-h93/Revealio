@@ -29,11 +29,12 @@ class MotionManager: ObservableObject {
     }
     
     private func startMotionUpdates() {
-        motionManager.deviceMotionUpdateInterval = 1/15
+        motionManager.deviceMotionUpdateInterval = 1
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] data, error in
             guard let motion = data?.attitude else { return }
-            self?.x = motion.roll
-            self?.y = motion.pitch
+            self?.x = motion.yaw
+            // motion on y axis
+            //self?.y = motion.pitch
         }
     }
     

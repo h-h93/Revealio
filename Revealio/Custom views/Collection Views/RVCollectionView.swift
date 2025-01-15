@@ -21,6 +21,12 @@ class RVCollectionView: UICollectionView {
     
     private func configure() {
         translatesAutoresizingMaskIntoConstraints = false
+        showsVerticalScrollIndicator = false
         backgroundColor = .systemBackground
+    }
+    
+    
+    func setLayout(layout: UICollectionViewLayout) {
+        setCollectionViewLayout(layout, animated: true)
     }
 }

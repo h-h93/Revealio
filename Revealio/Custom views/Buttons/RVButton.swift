@@ -14,7 +14,7 @@ class RVButton: UIButton {
     }
     
     
-    convenience init(colour: UIColor, title: String, systemImageName: String?) {
+    convenience init(colour: UIColor, title: String?, systemImageName: String?) {
         self.init(frame: .zero)
         set(colour: colour, title: title, systemImageName: systemImageName)
     }
@@ -33,7 +33,7 @@ class RVButton: UIButton {
     }
     
     
-    private final func set(colour: UIColor, title: String, systemImageName: String?) {
+    private final func set(colour: UIColor, title: String?, systemImageName: String?) {
         configuration?.baseBackgroundColor = colour
         configuration?.baseForegroundColor = colour
         configuration?.title = title

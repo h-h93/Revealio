@@ -21,7 +21,7 @@ class RVTabBarController: UITabBarController, UITabBarControllerDelegate {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().tintColor = .secondaryLabel
-        viewControllers = [createHomeVCTab(), createLoginVCTab()]
+        viewControllers = [createHomeVCTab(), createChatsVCTab(), createLoginVCTab()]
     }
     
     
@@ -33,9 +33,17 @@ class RVTabBarController: UITabBarController, UITabBarControllerDelegate {
     }
     
     
+    private func createChatsVCTab() -> UINavigationController {
+        let chatsVC = ChatsVC()
+        chatsVC.title = "Chats"
+        chatsVC.tabBarItem = UITabBarItem(title: "Chats", image: Images.chatTabImage, tag: 1)
+        return UINavigationController(rootViewController: chatsVC)
+    }
+    
+    
     private func createLoginVCTab() -> UINavigationController {
         let loginVC = LoginVC()
-        loginVC.tabBarItem = UITabBarItem(title: "Login", image: Images.homeTabImage, tag: 0)
+        loginVC.tabBarItem = UITabBarItem(title: "Login", image: Images.homeTabImage, tag: 2)
         return UINavigationController(rootViewController: loginVC)
     }
 }

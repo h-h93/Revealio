@@ -7,21 +7,28 @@
 import UIKit
 import SwiftUI
 
+protocol RVScratchViewDelegate: AnyObject {
+    func didTapRandomiseButton()
+}
+
 struct RVScratchView: View {
     @State private var points = [CGPoint]()
-    @State private var image = Image(systemName: "heart")
+    private var image: Image!
     @State private var clearScratchArea = false
     private let lineWidth: CGFloat = 80
-    private let scratchFrame = CGRect(x: 0, y: 0, width: 350, height: 400)
+    private var scratchFrame: CGRect!
     private let gridSize = 5
-    private let gridCellSize = 50
-    private let scratchClearAmount: CGFloat = 0.5 // 50%
+    private let gridCellSize = 40
+    private let scratchClearAmount: CGFloat = 0.80 // 80%
     @StateObject private var motionManager = MotionManager()
-    private var scratchViewColor = Color.random
-    private var hiddenViewColor = Color.random
+    @State private var scratchViewColor = Color.random
+    @State private var hiddenViewColor = Color.random
+    @State var selection = 1
+    weak var delegate: RVScratchViewDelegate?
     
-    init (image: Image?) {
-        self.image = image ?? Image.init(systemName: "heart")
+    init (frame: CGRect, image: Image?) {
+        self.scratchFrame = frame
+        self.image = image ?? Image(systemName: "questionmark.circle")
     }
     
     var body: some View {
@@ -30,13 +37,18 @@ struct RVScratchView: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(scratchViewColor)
                 .frame(width: scratchFrame.width, height: scratchFrame.height)
+                .overlay {
+                    Image(systemName: "drop.degreesign")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: scratchFrame.width - 50)
+                }
                 .animation(.easeInOut, value: clearScratchArea)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .compositingGroup()
                 .shadow(color: .black, radius: 5)
                 .opacity(clearScratchArea ? 0 : 1)
             
-            // partial reveal view
             // MARK: Partial REVEAL view
             RoundedRectangle(cornerRadius: 20)
                 .fill(hiddenViewColor)
@@ -90,7 +102,6 @@ struct RVScratchView: View {
                 )
                 .opacity(clearScratchArea ? 0 : 1)
             
-            
             // MARK: Full REVEAL view
             RoundedRectangle(cornerRadius: 20)
                 .fill(hiddenViewColor)
@@ -104,11 +115,41 @@ struct RVScratchView: View {
                 .compositingGroup()
                 .shadow(color: .black, radius: 5)
                 .opacity(clearScratchArea ? 1 : 0)
-                .rotation3DEffect(.degrees(motionManager.x * 10), axis: (x: 0, y: 1, z: 0))
-                .rotation3DEffect(.degrees(motionManager.y * 10), axis: (x: -1, y: 0, z: 0))
-            
-                .padding()
+                .rotation3DEffect(.degrees(motionManager.x * 2.5), axis: (x: 0, y: 5, z: 5))
+            // Uncomment below if we want to add motion on y axis
+            //.rotation3DEffect(.degrees(motionManager.y * 5), axis: (x: -1, y: 0, z: 0))
         }
+        
+        Button(action: {
+            selection += 1
+            print(selection)
+        },
+               label: {
+            Text("Next")
+                .font(.title2)
+                .bold()
+                .foregroundStyle(.indigo)
+                .frame(width: 220)
+                .padding(.vertical, 10)
+        })
+        .buttonStyle(.borderedProminent)
+        .tint(.white)
+        .overlay {
+            Capsule().stroke(Color.black, lineWidth: 1.0)
+                .padding(3)
+                .overlay {
+                    Capsule().stroke(Color.black, lineWidth: 5.0)
+                }
+        }
+        .clipShape(Capsule())
+        .padding(.vertical, 20)
+        .onChange(of: selection) { value, _ in
+            scratchViewColor = Color.random
+            hiddenViewColor = Color.random
+            points = []
+            clearScratchArea = false
+        }
+        
     }
-    
+
 }

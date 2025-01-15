@@ -8,22 +8,22 @@
 import UIKit
 import SwiftUI
 
-protocol RVLoginViewDelegateProtocol: AnyObject {
-    
-}
+protocol RVLoginViewDelegateProtocol: AnyObject {}
 
 class RVLoginView: UIViewController, RVDataLoadingVC {
     var loadingAnimationContainerView: UIView!
-    let scrollView = RVScrollView()
-    let contentView = RVContentView()
+    private let scrollView = RVScrollView()
+    private let contentView = RVContentView()
+    var verificationView: RVPhoneVerificationVC!
     
-    private let loginTitle = RVLabel(font: UIFont.preferredFont(forTextStyle: .title1), alignment: .center, textColor: .label, text: "Welcome")
-    private let resetPasswordLabel = RVLabel(font: UIFont.preferredFont(forTextStyle: .footnote), alignment: .right, textColor: .systemBlue, text: "Forgot password?")
-    private var signUpLabel = RVLabel(font: UIFont.preferredFont(forTextStyle: .footnote), alignment: .center, textColor: .label, text: nil)
-    
-    private var emailTextField = RVTextField()
-    private var passwordTextField = RVTextField()
-    private var loginButton = RVButton(colour: .systemOrange, title: "Login", systemImageName: nil)
+    private let loginTitle = RVLabel(font: UIFont.preferredFont(forTextStyle: .title1), alignment: .center, textColor: .label, text: "Revealio!")
+    private var countryCodePickerButton = RVButton(colour: .systemGray, title: nil, systemImageName: nil)
+    private var countryCodes: [DialingAreaCode]!
+    private var phoneNumberTextField = RVTextField()
+    private var verifyPhoneTextField = RVTextField()
+    private var otpButton = RVButton(colour: .systemOrange, title: "Request OTP", systemImageName: nil)
+    private var verifyButton = RVButton(colour: .systemOrange, title: "Verify", systemImageName: nil)
+    private var selectedCountryCode = ""
     //    var appleButton: AppleAuthButton = {
     //        let button = AppleAuthButton(frame: CGRect(x: 0, y: 0, width: 60, height: 60))
     //        button.translatesAutoresizingMaskIntoConstraints = false
@@ -36,9 +36,10 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
+        configureCountryCodeButton()
         configureLabels()
         configureTextFields()
-        configureButtons()
+        configureLoginButton()
         setConstraints()
     }
     
@@ -47,6 +48,7 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
         view.backgroundColor = .systemBackground
         view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
+        hideKeyboardWhenTappedAround()
         scrollView.addSubview(contentView)
         scrollView.pinToEdges(of: self.view)
         contentView.pinToEdges(of: scrollView)
@@ -57,40 +59,38 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
     }
     
     
-    private func configureLabels() {
-        signUpLabel.colorString(text: "Don't have an account? Sign up", coloredText: "Sign up")
-        contentView.addSubview(signUpLabel)
-        contentView.addSubviews(loginTitle, resetPasswordLabel)
-        let resetGesture = UITapGestureRecognizer(target: self, action: #selector(resetTapped))
-        resetPasswordLabel.addGestureRecognizer(resetGesture)
+    private func configureCountryCodeButton() {
+        guard let file = Bundle.main.url(forResource: "CountryNumbers", withExtension: "json") else { return }
+        guard let data = try? Data(contentsOf: file) else { return }
+        let decoder = JSONDecoder()
+        countryCodes = try? decoder.decode([DialingAreaCode].self, from: data)
+        countryCodes = countryCodes.sorted(by: { $0.name < $1.name })
+        countryCodePickerButton.configuration?.title = countryCodes.first?.flag
+        countryCodePickerButton.addTarget(self, action: #selector(countryCodeTapped), for: .touchUpInside)
+        selectedCountryCode = countryCodes.first?.dial_code ?? ""
+        contentView.addSubviews(countryCodePickerButton)
     }
     
     
+    private func configureLabels() { contentView.addSubviews(loginTitle) }
+    
+
     private func configureTextFields() {
-        emailTextField.tag = 1
-        emailTextField.addBottomBorder(color: .tertiaryLabel)
-        emailTextField.autocorrectionType = .no
-        emailTextField.keyboardType = .emailAddress
-        emailTextField.returnKeyType = .done
-        emailTextField.autocapitalizationType = .none
-        emailTextField.placeholder = "Email"
-        //emailTextField.attributedPlaceholder = NSAttributedString(string: "Enter email address", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+        phoneNumberTextField.addBottomBorder(color: .tertiaryLabel)
+        phoneNumberTextField.autocorrectionType = .no
+        phoneNumberTextField.keyboardType = .phonePad
+        phoneNumberTextField.returnKeyType = .done
+        phoneNumberTextField.autocapitalizationType = .none
+        phoneNumberTextField.placeholder = "Phone Number"
         
-        passwordTextField.tag = 2
-        passwordTextField.addBottomBorder(color: .tertiaryLabel)
-        passwordTextField.autocorrectionType = .no
-        passwordTextField.isSecureTextEntry = true
-        passwordTextField.returnKeyType = .done
-        passwordTextField.autocapitalizationType = .none
-        passwordTextField.placeholder = "Password"
-//        passwordTextField.attributedPlaceholder = NSAttributedString(string: "Enter password", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-        contentView.addSubviews(emailTextField, passwordTextField)
+        contentView.addSubviews(phoneNumberTextField)
     }
     
     
-    private func configureButtons() {
-        loginButton.configuration?.cornerStyle = .capsule
-        contentView.addSubview(loginButton)
+    private func configureLoginButton() {
+        otpButton.configuration?.cornerStyle = .capsule
+        otpButton.addTarget(self, action: #selector(otpButtonTapped), for: .touchUpInside)
+        contentView.addSubview(otpButton)
     }
     
     
@@ -101,32 +101,20 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
             loginTitle.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
             loginTitle.heightAnchor.constraint(equalToConstant: 80),
             
-            emailTextField.topAnchor.constraint(equalTo: loginTitle.bottomAnchor, constant: 40),
-            emailTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            emailTextField.leadingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            emailTextField.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            emailTextField.heightAnchor.constraint(equalToConstant: 35),
+            countryCodePickerButton.topAnchor.constraint(equalTo: loginTitle.bottomAnchor, constant: 40),
+            countryCodePickerButton.leadingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.leadingAnchor, constant: 10),
+            countryCodePickerButton.widthAnchor.constraint(equalToConstant: 50),
+            countryCodePickerButton.heightAnchor.constraint(equalToConstant: 40),
             
-            passwordTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 70),
-            passwordTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            passwordTextField.leadingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            passwordTextField.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            passwordTextField.heightAnchor.constraint(equalToConstant: 50),
+            phoneNumberTextField.topAnchor.constraint(equalTo: loginTitle.bottomAnchor, constant: 44),
+            phoneNumberTextField.leadingAnchor.constraint(equalTo: countryCodePickerButton.trailingAnchor, constant: 5),
+            phoneNumberTextField.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            phoneNumberTextField.heightAnchor.constraint(equalToConstant: 35),
             
-            resetPasswordLabel.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 1),
-            resetPasswordLabel.leadingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -130),
-            resetPasswordLabel.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            resetPasswordLabel.heightAnchor.constraint(equalToConstant: 20),
-
-            signUpLabel.topAnchor.constraint(equalTo: resetPasswordLabel.bottomAnchor, constant: 40),
-            signUpLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            signUpLabel.widthAnchor.constraint(equalToConstant: 250),
-            signUpLabel.heightAnchor.constraint(equalToConstant: 35),
-            
-            loginButton.topAnchor.constraint(equalTo: signUpLabel.bottomAnchor, constant: 50),
-            loginButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            loginButton.widthAnchor.constraint(equalToConstant: 180),
-            loginButton.heightAnchor.constraint(equalToConstant: 45),
+            otpButton.topAnchor.constraint(equalTo: phoneNumberTextField.bottomAnchor, constant: 50),
+            otpButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            otpButton.widthAnchor.constraint(equalToConstant: 180),
+            otpButton.heightAnchor.constraint(equalToConstant: 45),
             
 //            appleButton.topAnchor.constraint(equalTo: loginWithLabel.bottomAnchor, constant: 20),
 //            appleButton.centerXAnchor.constraint(equalTo: self.centerXAnchor),
@@ -135,14 +123,82 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
         ])
     }
     
+    
     func setContentViewHeight(_ height: CGFloat) {
-
         scrollView.setNeedsLayout()
         contentView.setNeedsLayout()
     }
+
+    
+    @objc func otpButtonTapped() {
+        guard let text = phoneNumberTextField.text else { return }
+        showLoadingView()
+        let phonenumber = selectedCountryCode + text
+        FirebaseService.shared.sendVerificationCode(phoneNumber: phonenumber, completion: { result in
+            switch result {
+            case .failure(let error):
+                self.dismissLoadingView()
+                self.presentRVAlert(title: "Error", message: error.localizedDescription, buttonTitle: "OK")
+            case .success(let verificationID):
+                guard let verificationID else { return }
+                DispatchQueue.main.async {
+                    self.verificationView = RVPhoneVerificationVC(verificationID: verificationID)
+                    self.dismissLoadingView()
+                    self.verificationView.sheetPresentationController?.prefersGrabberVisible = true
+                    self.present(self.verificationView, animated: true)
+                }
+            }
+        })
+    }
     
     
-    @objc func resetTapped() {
+    @objc func countryCodeTapped(_ sender: UIButton) {
+        let popoverViewController = RVPickerVC(dataSource: countryCodes)
+        popoverViewController.rvPickVCDelegate = self
         
+        // 1. Set the size of the popover content
+        popoverViewController.preferredContentSize = .init(width: 250, height: 250)
+        // 2. Set the presentation style to .popover
+        popoverViewController.modalPresentationStyle = .popover
+        
+        // 3. Configure the popover presentation
+        let popoverPresentationController = popoverViewController.popoverPresentationController
+        // Set the permitted arrow directions
+        popoverPresentationController?.permittedArrowDirections = .up
+        // Set the source rect (the bounds of the button)
+        popoverPresentationController?.sourceRect = sender.bounds
+        // Set the source view (the button)
+        popoverPresentationController?.sourceView = sender
+        // 4. Set the view controller as the delegate to manage the popover's behavior.
+        popoverPresentationController?.delegate = self
+        
+        // 5. Present the popover view controller
+        if let presentedViewController {
+            // Dismiss any existing popover if it exists before presenting the new one
+            presentedViewController.dismiss(animated: true) { [weak self] in
+                self?.present(popoverViewController, animated: true)
+            }
+        } else {
+            // Present the view controller if no existing popover is presented
+            present(popoverViewController, animated: true)
+        }
+    }
+}
+
+
+extension RVLoginView: UIPopoverPresentationControllerDelegate, RVPickerVCDelegate {
+    func didSelect(dialingAreaCode: DialingAreaCode) {
+        selectedCountryCode = dialingAreaCode.dial_code
+        countryCodePickerButton.configuration?.title = dialingAreaCode.flag
+    }
+    
+    
+    func adaptivePresentationStyle(
+        for controller: UIPresentationController,
+        traitCollection: UITraitCollection
+    ) -> UIModalPresentationStyle {
+        // Return no adaptive presentation style,
+        // use default presentation behaviour
+        return .none
     }
 }

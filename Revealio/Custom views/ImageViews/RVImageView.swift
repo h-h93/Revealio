@@ -1,12 +1,13 @@
 //
-//  RVScrollView.swift
+//  RVImageView.swift
 //  Revealio
 //
-//  Created by hanif hussain on 02/12/2024.
+//  Created by hanif hussain on 19/12/2024.
 //
 import UIKit
 
-class RVScrollView: UIScrollView {
+class RVImageView: UIImageView {
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         configure()
@@ -19,9 +20,7 @@ class RVScrollView: UIScrollView {
     
     
     private func configure() {
-        backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
-        keyboardDismissMode = .interactive
-        showsVerticalScrollIndicator = false
+        backgroundColor = .systemBackground
     }
 }
