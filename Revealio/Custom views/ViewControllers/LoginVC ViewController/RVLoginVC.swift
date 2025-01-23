@@ -82,7 +82,6 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
         phoneNumberTextField.returnKeyType = .done
         phoneNumberTextField.autocapitalizationType = .none
         phoneNumberTextField.placeholder = "Phone Number"
-        
         contentView.addSubviews(phoneNumberTextField)
     }
     
@@ -111,7 +110,7 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
             phoneNumberTextField.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             phoneNumberTextField.heightAnchor.constraint(equalToConstant: 35),
             
-            otpButton.topAnchor.constraint(equalTo: phoneNumberTextField.bottomAnchor, constant: 50),
+            otpButton.topAnchor.constraint(equalTo: phoneNumberTextField.bottomAnchor, constant: 100),
             otpButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             otpButton.widthAnchor.constraint(equalToConstant: 180),
             otpButton.heightAnchor.constraint(equalToConstant: 45),
@@ -138,7 +137,7 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
             switch result {
             case .failure(let error):
                 self.dismissLoadingView()
-                self.presentRVAlert(title: "Error", message: error.localizedDescription, buttonTitle: "OK")
+                self.presentRVAlert(title: "Error", message: error.rawValue, buttonTitle: "OK")
             case .success(let verificationID):
                 guard let verificationID else { return }
                 DispatchQueue.main.async {
