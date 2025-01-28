@@ -10,7 +10,7 @@ import SwiftUI
 
 protocol RVLoginViewDelegateProtocol: AnyObject {}
 
-class RVLoginView: UIViewController, RVDataLoadingVC {
+class RVLoginVC: UIViewController, RVDataLoadingVC {
     var loadingAnimationContainerView: UIView!
     private let scrollView = RVScrollView()
     private let contentView = RVContentView()
@@ -141,10 +141,13 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
             case .success(let verificationID):
                 guard let verificationID else { return }
                 DispatchQueue.main.async {
-                    self.verificationView = RVPhoneVerificationVC(verificationID: verificationID)
+                    self.verificationView = RVPhoneVerificationVC(verificationID: verificationID, phoneNumber: phonenumber)
                     self.dismissLoadingView()
-                    self.verificationView.sheetPresentationController?.prefersGrabberVisible = true
-                    self.present(self.verificationView, animated: true)
+                    let navigationVC = UINavigationController(rootViewController: self.verificationView)
+                    navigationVC.modalPresentationStyle = .pageSheet
+                    navigationVC.modalTransitionStyle = .crossDissolve
+                    navigationVC.sheetPresentationController?.prefersGrabberVisible = true
+                    self.present(navigationVC, animated: true)
                 }
             }
         })
@@ -185,7 +188,7 @@ class RVLoginView: UIViewController, RVDataLoadingVC {
 }
 
 
-extension RVLoginView: UIPopoverPresentationControllerDelegate, RVPickerVCDelegate {
+extension RVLoginVC: UIPopoverPresentationControllerDelegate, RVPickerVCDelegate {
     func didSelect(dialingAreaCode: DialingAreaCode) {
         selectedCountryCode = dialingAreaCode.dial_code
         countryCodePickerButton.configuration?.title = dialingAreaCode.flag

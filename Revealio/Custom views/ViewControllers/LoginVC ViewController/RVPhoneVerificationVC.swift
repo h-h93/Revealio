@@ -12,14 +12,16 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
     
     private var verificationCodeTextField = RVTextField()
     private var verificationID: String?
+    private var phoneNumber: String!
     
     private var cancellablesSubscription = Set<AnyCancellable>()
     @Published private var verificationText: String?
     
     
-    init (verificationID: String) {
+    init (verificationID: String, phoneNumber: String) {
         super.init(nibName: nil, bundle: nil)
         self.verificationID = verificationID
+        self.phoneNumber = phoneNumber
     }
     
     
@@ -48,9 +50,9 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
         verificationCodeTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
         
         $verificationText
-        // use debounce to publish to delay for 300 milliseconds before publishing
+        // use debounce to publish to delay for 800 milliseconds before publishing
         // we use main here because we are updating ui
-            .debounce(for: 0.3, scheduler: DispatchQueue.main)
+            .debounce(for: 0.8, scheduler: DispatchQueue.main)
         //Remember that I mentioned a requirement where a user had to type at least a couple of characters before we’re interested in processing the search query? We can achieve this by filtering the output of a publisher using the filter operator:
             .filter({ ($0 ?? "").count > 5 })
             .sink(receiveCompletion: { _ in
@@ -62,7 +64,16 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
                     commpletion in
                     switch commpletion {
                     case .success(let user):
-                        print("successfully created user: \(user)")
+                        FirebaseService.shared.isNewUser { isNew in
+                            if isNew {
+                                let createProfileVC = RVEditProfileDetailVC(phoneNumber: self.phoneNumber)
+                                createProfileVC.modalPresentationStyle = .fullScreen
+                                createProfileVC.modalTransitionStyle = .crossDissolve
+                                self.navigationController?.pushViewController(createProfileVC, animated: true)
+                            } else {
+                                print("existing user")
+                            }
+                        }
                     case .failure(let error):
                         self.presentRVAlert(title: "Oops", message: error.rawValue, buttonTitle: "OK")
                     }
@@ -83,4 +94,5 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
     
     
     @objc func textChanged() { verificationText = verificationCodeTextField.text }
+    @objc func doneTapped() {}
 }

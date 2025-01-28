@@ -4,12 +4,13 @@
 //
 //  Created by hanif hussain on 01/01/2025.
 //
-import Foundation
+import UIKit
 // Models/User.swift
 struct User: Codable {
-    let id: String
+    let id: String?
     let displayName: String
-    let photoURL: String?
+    var photoURL: String?
     let createdAt: Date
     let lastSeen: Date
+    let phoneNumber: String
 }

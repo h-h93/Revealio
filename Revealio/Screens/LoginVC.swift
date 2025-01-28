@@ -9,7 +9,7 @@ import UIKit
 
 class LoginVC: UIViewController, RVDataLoadingVC, RVLoginViewDelegateProtocol {
     var loadingAnimationContainerView: UIView!
-    private var loginView: RVLoginView!
+    private var loginView: RVLoginVC!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -19,7 +19,7 @@ class LoginVC: UIViewController, RVDataLoadingVC, RVLoginViewDelegateProtocol {
     
     private func configure() {
         view.backgroundColor = .systemBackground
-        loginView = RVLoginView()
+        loginView = RVLoginVC()
         loginView.rvLoginDelegate = self
         addChild(loginView)
         view.addSubview(loginView.view)

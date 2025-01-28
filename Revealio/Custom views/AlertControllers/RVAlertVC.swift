@@ -9,7 +9,7 @@ import UIKit
 class RVAlertVC: UIViewController {
     let containerView = RVContentView()
     let titleLabel = RVLabel(font: UIFont.preferredFont(forTextStyle: .title1), alignment: .center, textColor: .label, text: "Error")
-    let messageLabel = RVLabel(font: UIFont.preferredFont(forTextStyle: .body), alignment: .center, textColor: .label, text: "")
+    let messageLabel = RVBodyLabel(textAlignment: .center)
     let actionButton = RVButton(colour: .systemOrange, title: "OK", systemImageName: "checkmark.circle")
     
     var alertTitle: String?
@@ -42,6 +42,8 @@ class RVAlertVC: UIViewController {
     
     
     private func configureContainerView() {
+        containerView.layer.cornerRadius = 16
+        containerView.layer.borderWidth = 2
         NSLayoutConstraint.activate([
             containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -65,13 +67,13 @@ class RVAlertVC: UIViewController {
     
     private func configureMessageLabel() {
         messageLabel.text = message ?? "Unable to complete your request"
-        messageLabel.numberOfLines = 4
+       // messageLabel.numberOfLines = 4
         
         NSLayoutConstraint.activate([
             messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: padding),
             messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -padding),
-            messageLabel.heightAnchor.constraint(equalToConstant: 45)
+            messageLabel.heightAnchor.constraint(equalToConstant: 80)
         ])
     }
     
