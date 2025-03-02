@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		670E99312D583A6900965912 /* InputBarAccessoryView in Frameworks */ = {isa = PBXBuildFile; productRef = 670E99302D583A6900965912 /* InputBarAccessoryView */; };
+		670E993C2D5C5DFA00965912 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 670E993B2D5C5DFA00965912 /* AsyncAlgorithms */; };
 		673BD2DE2D250A7000A93340 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 673BD2DD2D250A7000A93340 /* FirebaseAuth */; };
 		673BD2E02D250A7000A93340 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 673BD2DF2D250A7000A93340 /* FirebaseCore */; };
 		673BD2E22D250A7000A93340 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 673BD2E12D250A7000A93340 /* FirebaseDatabase */; };
@@ -82,6 +84,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				67B581D02CFA13D9001F6EB1 /* FirebaseAnalytics in Frameworks */,
+				670E99312D583A6900965912 /* InputBarAccessoryView in Frameworks */,
 				673BD2DE2D250A7000A93340 /* FirebaseAuth in Frameworks */,
 				67B581D42CFA13D9001F6EB1 /* FirebaseAppCheck in Frameworks */,
 				673BD2E62D250A7000A93340 /* FirebaseFirestoreCombine-Community in Frameworks */,
@@ -93,6 +96,7 @@
 				67B581D82CFA1840001F6EB1 /* StoreKit.framework in Frameworks */,
 				673BD2EA2D250A7000A93340 /* FirebaseMessaging in Frameworks */,
 				673BD2E82D250A7000A93340 /* FirebaseInAppMessaging-Beta in Frameworks */,
+				670E993C2D5C5DFA00965912 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +156,7 @@
 				67B581772CFA102B001F6EB1 /* Sources */,
 				67B581782CFA102B001F6EB1 /* Frameworks */,
 				67B581792CFA102B001F6EB1 /* Resources */,
+				670E993D2D5C60BB00965912 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -173,6 +178,8 @@
 				673BD2E72D250A7000A93340 /* FirebaseInAppMessaging-Beta */,
 				673BD2E92D250A7000A93340 /* FirebaseMessaging */,
 				673BD2EB2D250A7000A93340 /* FirebaseStorage */,
+				670E99302D583A6900965912 /* InputBarAccessoryView */,
+				670E993B2D5C5DFA00965912 /* AsyncAlgorithms */,
 			);
 			productName = Revealio;
 			productReference = 67B5817B2CFA102B001F6EB1 /* Revealio.app */;
@@ -258,6 +265,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				67B581CE2CFA13D9001F6EB1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				670E992F2D583A6900965912 /* XCRemoteSwiftPackageReference "InputBarAccessoryView" */,
+				670E993A2D5C5DFA00965912 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67B5817C2CFA102B001F6EB1 /* Products */;
@@ -294,6 +303,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		670E993D2D5C60BB00965912 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		67B581772CFA102B001F6EB1 /* Sources */ = {
@@ -344,6 +373,9 @@
 				DEVELOPMENT_TEAM = 68Z27E7S2D;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Revealio/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow access to your photos ";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow access to contacs for sending and receiving messages";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -376,6 +408,9 @@
 				DEVELOPMENT_TEAM = 68Z27E7S2D;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Revealio/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow access to your photos ";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Allow access to contacs for sending and receiving messages";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -434,7 +469,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -497,7 +532,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -630,6 +665,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		670E992F2D583A6900965912 /* XCRemoteSwiftPackageReference "InputBarAccessoryView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nathantannar4/InputBarAccessoryView?tab=readme-ov-file";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+		670E993A2D5C5DFA00965912 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.3;
+			};
+		};
 		67B581CE2CFA13D9001F6EB1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -641,6 +692,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		670E99302D583A6900965912 /* InputBarAccessoryView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 670E992F2D583A6900965912 /* XCRemoteSwiftPackageReference "InputBarAccessoryView" */;
+			productName = InputBarAccessoryView;
+		};
+		670E993B2D5C5DFA00965912 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 670E993A2D5C5DFA00965912 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
 		673BD2DD2D250A7000A93340 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 67B581CE2CFA13D9001F6EB1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

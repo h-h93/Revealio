@@ -1,19 +1,20 @@
 //
-//  ContactsView.swift
+//  AddContactView.swift
 //  Revealio
 //
-//  Created by hanif hussain on 18/12/2024.
+//  Created by hanif hussain on 27/01/2025.
 //
 import UIKit
 import Contacts
-protocol ChatsViewCollectionViewDelegate: AnyObject {
-    func didselectChat(contact: CNContact)
+
+protocol AddContactViewDelegate: AnyObject {
+    func didselectContact(contact: CNContact)
 }
 
-class ChatsView: UIView, UICollectionViewDelegate {
+class AddContactView: UIView, UICollectionViewDelegate {
     private var collectionView: RVCollectionView!
     private var dataSource: ContactsDataSource!
-    weak var chatDelegate: ChatsViewCollectionViewDelegate?
+    weak var addContactDelegate: AddContactViewDelegate?
     private var contacts = [CNContact]()
     
     init(frame: CGRect, contacts: [CNContact]?) {
@@ -49,8 +50,8 @@ class ChatsView: UIView, UICollectionViewDelegate {
     
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let chatDelegate else { return }
-        chatDelegate.didselectChat(contact: dataSource.contacts[indexPath.row])
+        guard let addContactDelegate else { return }
+        addContactDelegate.didselectContact(contact: dataSource.contacts[indexPath.row])
     }
     
 }

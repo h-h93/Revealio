@@ -17,13 +17,12 @@ class FirebaseService {
     static let shared = FirebaseService()
     private let db = Firestore.firestore()
     private let storage = Storage.storage().reference()
-    
-    init() {
-        Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en"
-    }
-    
-    
-    func sendVerificationCode(phoneNumber: String, completion: @escaping (Result<String?, RVError>) -> (Void))  {
+    private var chatListenerTask: Task<Void, Never>?
+
+    init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
+
+
+    func sendVerificationCode(phoneNumber: String, completion: @escaping (Result<String?, RVError>) -> (Void)) {
         PhoneAuthProvider.provider()
             .verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
                 if let error = error {
@@ -43,8 +42,8 @@ class FirebaseService {
                 }
             }
     }
-    
-    
+
+
     func createAccount(verificationID: String, verificationCode: String, completion: @escaping (Result<Void, RVError>) -> (Void)) {
         // Sign in using the verificationID and the code sent to the user
         // ...
@@ -52,7 +51,7 @@ class FirebaseService {
             withVerificationID: verificationID,
             verificationCode: verificationCode
         )
-        Auth.auth().signIn(with: credential) { authResult, error in
+        Auth.auth().signIn(with: credential) { _, error in
             if let error = error {
                 let authError = error as NSError
                 switch authError.code {
@@ -69,88 +68,150 @@ class FirebaseService {
             completion(.success(()))
         }
     }
-    
-    
-    func isNewUser(newUser: @escaping (Bool) -> Void) {
-        if let auth = Auth.auth().currentUser {
-            let docRef = db.collection("Users").document(auth.uid)
-            docRef.getDocument { (snapshot, error) in
-                if let document = snapshot {
-                    // if the user has no entry in the DB then it is a new user
-                    if !document.exists {
-                        newUser(true)
-                    } else {
-                        newUser(false)
-                    }
-                }
+
+
+    func checkDocumentExists(collectionName: String, fieldName: String?, exists: @escaping (Bool) -> Void) {
+        guard let fieldName = fieldName else {
+            exists(false)
+            return
+        }
+        let collectionRef = db.collection(collectionName).document(fieldName)
+        collectionRef.getDocument { (document, error) in
+            if let document = document, document.exists {
+                let data = document.data()
+                // Check if the field exists in data
+                exists(true)
+            } else {
+                print("Document does not exist")
+                exists(false)
+            }
+        }
+    }
+
+
+    func checkCollectionFieldRecordExists<T>(collectionName: String, fieldName: String, record: T) async throws -> Bool {
+        let collectionRef = db.collection(collectionName)
+        let snapshot = try await collectionRef
+            .whereField(fieldName, isEqualTo: record)
+            .limit(to: 1)
+            .getDocuments()
+        return !snapshot.isEmpty
+    }
+
+
+    func getChatList(completion: @escaping ([ConversationDocument]) -> Void) {
+        guard let auth = Auth.auth().currentUser else {
+            completion([])
+            return
+        }
+
+        cancelChatListener()
+
+        let collectionRef = db.collection(FirebaseCollections.conversations.rawValue)
+        let query = collectionRef.whereField("participants", arrayContains: auth.uid)
+
+        let listener = query.addSnapshotListener { snapshot, error in
+            if let error = error {
+                print("Error fetching conversations: \(error.localizedDescription)")
+                completion([])
                 return
             }
+
+            guard let documents = snapshot?.documents else {
+                print("No conversations found")
+                completion([])
+                return
+            }
+
+            let docs = documents.compactMap { document in
+                return try? document.data(as: ConversationDocument.self)
+            }
+
+            // Call the completion handler with the results
+            completion(docs)
         }
-    }
-    
-    
-    func checkUsername(username: String, completion: @escaping (Bool) -> Void) {
-        let collectionRef = db.collection("Users")
-        collectionRef.whereField("displayName", isEqualTo: username).getDocuments { snapshot, error in
-            if error != nil {
-                print("Error getting document \(error)")
-            } else if (snapshot?.isEmpty)! {
-                completion(false)
-            } else {
-                for document in (snapshot?.documents)! {
-                    if document.data()["displayName"] != nil {
-                        completion(true)
-                    }
-                }
+
+        // Store the listener so it can be cancelled later
+        chatListenerTask = Task {
+            // Keep the listener alive until the task is cancelled
+            await withTaskCancellationHandler {
+                try? await Task.sleep(for: .seconds(3600)) // Keep alive for an hour
+            } onCancel: {
+                listener.remove()
             }
         }
     }
-    
-    //MARK: create new user data entry in the DB
+
+
+    // Method to cancel the current listener
+    func cancelChatListener() {
+        chatListenerTask?.cancel()
+        chatListenerTask = nil
+    }
+
+
+    // Don't forget to cancel when appropriate (e.g., deinit)
+    deinit { cancelChatListener() }
+
+
+    func getMessages(documentID: String?) async throws {
+        guard let auth = Auth.auth().currentUser else { return  }
+        guard let documentID = documentID else { return }
+        // Reference the nested collection directly
+        let messagesRef = db.collection(FirebaseCollections.conversations.rawValue)
+            .document(documentID)
+            .collection(FirebaseCollections.messages.rawValue)
+        let snapshot = try await messagesRef.getDocuments()
+        for document in snapshot.documents {
+            print("\(document.documentID) => \(document.data())")
+        }
+    }
+
+
+    // MARK: create new user data entry in the DB
     func createInitialUserEntry(user: User) {
         guard let auth = Auth.auth().currentUser else { return }
-        let id = auth.uid
-        let docRef = db.collection("Users").document(id)
+        let docRef = db.collection("Users").document(auth.uid)
         var dataForNewUser = [
-            "displayName" : user.displayName,
-            "photoURL" : user.photoURL,
-            "createdAt" : user.createdAt,
-            "lastSeen" : user.lastSeen,
-            "phoneNumber" : user.phoneNumber,
-        ] as [String : Any]
+            "displayName": user.displayName,
+            "photoURL": user.photoURL ?? "",
+            "createdAt": user.createdAt,
+            "lastSeen": user.lastSeen,
+            "phoneNumber": user.phoneNumber,
+        ] as [String: Any]
         let profilePic = UIImage(contentsOfFile: user.photoURL ?? "")
-        
+
         docRef.getDocument { (snapshot, error) in
             if let document = snapshot {
                 if !document.exists {
                     docRef.setData(dataForNewUser)
                     if profilePic == Images.defaultProfileImage {
-                        dataForNewUser.updateValue("", forKey: "profile_picture")
+                        dataForNewUser.updateValue("", forKey: "photoURL")
                     } else {
                         guard let profilePic = profilePic else { return }
                         self.uploadProfilePic(image: profilePic.jpegData(compressionQuality: 1)!)
                     }
                 }
             }
-            
+
             if let err = error {
                 print(err.localizedDescription)
             }
         }
     }
-    
-    
-    // upload/ update the users profile picture
+
+
+    // upload/update the users profile picture
     func uploadProfilePic(image: Data?) {
         guard let image = image else { return }
         guard let auth = Auth.auth().currentUser else { return }
         let id = auth.uid
         let docRef = db.collection("Users").document(id)
         let path = "Users_pictures/\(id)/images/profilePicture/profilePic.jpg"
-        
+
         // Create a storage reference from our storage service
         let fileRef = storage.child(path)
-        
+
         _ = fileRef.putData(image, metadata: nil) { metadata, error in
             if let error = error {
                 print("Error uploading image: \(error.localizedDescription)")
@@ -164,7 +225,7 @@ class FirebaseService {
                     docRef.getDocument { (snapshot, error) in
                         if let document = snapshot {
                             if document.exists {
-                                docRef.updateData(["profile_picture" : downloadURL.absoluteString])
+                                docRef.updateData(["photoURL": downloadURL.absoluteString])
                             }
                         }
                     }

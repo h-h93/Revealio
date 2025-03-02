@@ -6,10 +6,11 @@
 //
 import UIKit
 import Combine
+import FirebaseAuth
 
-class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
+class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
+    var alertVC: RVAlertVC!
     var loadingAnimationContainerView: UIView!
-    
     private var verificationCodeTextField = RVTextField()
     private var verificationID: String?
     private var phoneNumber: String!
@@ -33,6 +34,7 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
+        startProcesingInput()
     }
     
     
@@ -49,11 +51,24 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
         
         verificationCodeTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
         
+        view.addSubviews(verificationCodeTextField)
+        
+        NSLayoutConstraint.activate([
+            verificationCodeTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0),
+            verificationCodeTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            verificationCodeTextField.heightAnchor.constraint(equalToConstant: 50),
+            verificationCodeTextField.widthAnchor.constraint(equalToConstant: 200)
+        ])
+    }
+    
+    
+    func startProcesingInput() {
         $verificationText
         // use debounce to publish to delay for 800 milliseconds before publishing
         // we use main here because we are updating ui
             .debounce(for: 0.8, scheduler: DispatchQueue.main)
-        //Remember that I mentioned a requirement where a user had to type at least a couple of characters before we’re interested in processing the search query? We can achieve this by filtering the output of a publisher using the filter operator:
+        // Remember that I mentioned a requirement where a user had to type at least a couple of characters before we’re interested in processing the search query?
+        // We can achieve this by filtering the output of a publisher using the filter operator:
             .filter({ ($0 ?? "").count > 5 })
             .sink(receiveCompletion: { _ in
                 // do here whatever needed with error
@@ -64,13 +79,15 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
                     commpletion in
                     switch commpletion {
                     case .success(let user):
-                        FirebaseService.shared.isNewUser { isNew in
-                            if isNew {
+                        let auth = Auth.auth().currentUser
+                        FirebaseService.shared.checkDocumentExists(collectionName: FirebaseCollections.users.rawValue, fieldName: auth?.uid) { exists in
+                            if !exists {
                                 let createProfileVC = RVEditProfileDetailVC(phoneNumber: self.phoneNumber)
                                 createProfileVC.modalPresentationStyle = .fullScreen
                                 createProfileVC.modalTransitionStyle = .crossDissolve
                                 self.navigationController?.pushViewController(createProfileVC, animated: true)
                             } else {
+                                // log user in and update tabbar controller
                                 print("existing user")
                             }
                         }
@@ -81,15 +98,6 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC {
                 })
             })
             .store(in: &cancellablesSubscription)
-        
-        view.addSubviews(verificationCodeTextField)
-        
-        NSLayoutConstraint.activate([
-            verificationCodeTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0),
-            verificationCodeTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            verificationCodeTextField.heightAnchor.constraint(equalToConstant: 50),
-            verificationCodeTextField.widthAnchor.constraint(equalToConstant: 200)
-        ])
     }
     
     

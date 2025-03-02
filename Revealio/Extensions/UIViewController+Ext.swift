@@ -7,9 +7,14 @@
 import UIKit
 import SafariServices
 
-extension UIViewController {
+protocol UIViewControllerProtocol: UIViewController {
+    var alertVC: RVAlertVC! { get set }
+    func presentSafariVC(with urlString: String)
+}
+
+extension UIViewControllerProtocol {
     func presentRVAlert(title: String, message: String, buttonTitle: String) {
-        let alertVC = RVAlertVC(title: title, message: message, buttonTitle: buttonTitle)
+        alertVC = RVAlertVC(title: title, message: message, buttonTitle: buttonTitle)
         alertVC.modalPresentationStyle = .overFullScreen
         alertVC.modalTransitionStyle = .crossDissolve
         present(alertVC, animated: true)
@@ -25,7 +30,17 @@ extension UIViewController {
         safariVC.preferredBarTintColor = .systemBackground
         present(safariVC, animated: true)
     }
-    
+}
+
+
+extension UIViewController {
+    // taken from stack overflow many years ago -
+    // calculates how high the frame should be for a piece of text
+    func estimatedFrameForText(text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], context: nil)
+    }
     
     @objc func hideKeyboardWhenTappedAround() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))

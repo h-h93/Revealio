@@ -49,3 +49,16 @@ enum Images {
     static let contactsTabImage = UIImage(systemName: "person.3")
     static let defaultProfileImage = UIImage(systemName: "person.circle")
 }
+
+
+enum RVColours {
+    static let blue = UIColor.systemBlue
+    static let grey = UIColor(red: 0.75776, green: 0.76576, blue: 0.78632, alpha: 1.00)
+}
+
+
+enum FirebaseCollections: String {
+    case users  = "Users"
+    case conversations = "Conversations"
+    case messages = "messages"
+}

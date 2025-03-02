@@ -7,10 +7,12 @@
 
 import UIKit
 import SwiftUI
+import FirebaseAuth
 
 protocol RVLoginViewDelegateProtocol: AnyObject {}
 
-class RVLoginVC: UIViewController, RVDataLoadingVC {
+class RVLoginVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
+    var alertVC: RVAlertVC!
     var loadingAnimationContainerView: UIView!
     private let scrollView = RVScrollView()
     private let contentView = RVContentView()
@@ -41,6 +43,8 @@ class RVLoginVC: UIViewController, RVDataLoadingVC {
         configureTextFields()
         configureLoginButton()
         setConstraints()
+        
+        print(Auth.auth().currentUser?.uid ?? "No user")
     }
     
     
@@ -132,7 +136,7 @@ class RVLoginVC: UIViewController, RVDataLoadingVC {
     @objc func otpButtonTapped() {
         guard let text = phoneNumberTextField.text else { return }
         showLoadingView()
-        let phonenumber = selectedCountryCode + text
+        let phonenumber = selectedCountryCode + " " + text
         FirebaseService.shared.sendVerificationCode(phoneNumber: phonenumber, completion: { result in
             switch result {
             case .failure(let error):
@@ -141,7 +145,7 @@ class RVLoginVC: UIViewController, RVDataLoadingVC {
             case .success(let verificationID):
                 guard let verificationID else { return }
                 DispatchQueue.main.async {
-                    self.verificationView = RVPhoneVerificationVC(verificationID: verificationID, phoneNumber: phonenumber)
+                    self.verificationView = RVPhoneVerificationVC(verificationID: verificationID, phoneNumber: text)
                     self.dismissLoadingView()
                     let navigationVC = UINavigationController(rootViewController: self.verificationView)
                     navigationVC.modalPresentationStyle = .pageSheet

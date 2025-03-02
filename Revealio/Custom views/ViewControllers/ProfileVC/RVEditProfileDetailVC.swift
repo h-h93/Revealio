@@ -16,7 +16,6 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     private var phoneNumber: String!
     private let profilePictureView = RVImageView(frame: .zero)
     private let usernameTextField = RVTextField()
-    @Published private var username: String!
     private let profileImageWidthHeight: CGFloat = 250
     private let addImageButton = RVButton(colour: .clear, title: nil, systemImageName: nil)
     private let imagePicker = UIImagePickerController()
@@ -41,7 +40,6 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         configure()
         configureProfilePictureView()
         configureTextFields()
-        usernameCheck()
     }
     
     
@@ -100,15 +98,15 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     private func configureTextFields() {
         usernameTextField.placeholder = "Enter Display Name 🙂"
         usernameTextField.textAlignment = .center
-        usernameTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
+        usernameTextField.addBottomBorder()
         hideKeyboardWhenTappedAround()
         contentView.addSubview(usernameTextField)
         
         NSLayoutConstraint.activate([
             usernameTextField.topAnchor.constraint(equalTo: profilePictureView.bottomAnchor, constant: 80),
             usernameTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            usernameTextField.widthAnchor.constraint(equalToConstant: 200),
-            usernameTextField.heightAnchor.constraint(equalToConstant: 80)
+            usernameTextField.widthAnchor.constraint(equalToConstant: 250),
+            usernameTextField.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
     
@@ -148,28 +146,6 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     }
     
     
-    private func usernameCheck() {
-        $username
-            .debounce(for: 1, scheduler: DispatchQueue.main)
-            .filter({ ($0 ?? "").count > 0 })
-            .sink(receiveCompletion: { comp in
-                switch comp {
-                case .finished:
-                    break
-                case .failure(let err):
-                    print(err.localizedDescription)
-                }
-            }, receiveValue: { [weak self] _ in
-                guard let username = self?.username else { return }
-                FirebaseService.shared.checkUsername(username: username) { exists in
-                    if exists {
-                        self?.presentRVAlert(title: "Oops!", message: "Username exists please enter a different username you will not be able to use this one", buttonTitle: "OK")
-                    }
-                }
-            })
-            .store(in: &cancellables)
-    }
-    
     // upload image to firebase store and save that url as the photo url work on that
     @objc private func doneTapped() {
         guard let auth = Auth.auth().currentUser else { return }
@@ -180,10 +156,8 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         if imageURL != nil { FirebaseService.shared.uploadProfilePic(image: profilePictureView.image?.jpegData(compressionQuality: 0.6)) }
         let user = User(id: id, displayName: username, photoURL: self.imageURL, createdAt: Date.now, lastSeen: Date.now, phoneNumber: phoneNumber)
         FirebaseService.shared.createInitialUserEntry(user: user)
+        self.dismiss(animated: true)
     }
-    
-    
-    @objc func textChanged() { username = usernameTextField.text }
 }
 
 

@@ -19,7 +19,7 @@ struct RVScratchView: View {
     private var scratchFrame: CGRect!
     private let gridSize = 5
     private let gridCellSize = 40
-    private let scratchClearAmount: CGFloat = 0.80 // 80%
+    private let scratchClearAmount: CGFloat = 0.70 // 70%
     @StateObject private var motionManager = MotionManager()
     @State private var scratchViewColor = Color.random
     @State private var hiddenViewColor = Color.random

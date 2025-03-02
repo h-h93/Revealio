@@ -35,4 +35,26 @@ extension String {
         let passwordCheck = NSPredicate(format: "SELF MATCHES %@",passwordRegx)
         return passwordCheck.evaluate(with: password)
     }
+    
+    
+    func removeCountryCode(from phoneNumber: String) -> String? {
+        // First remove all spaces
+        let noSpaces = phoneNumber.replacingOccurrences(of: " ", with: "")
+        
+        // Find where the numbers start after the country code (+XX)
+        if let range = noSpaces.range(of: "\\+\\d+", options: .regularExpression) {
+            // Get everything after the country code and filter to keep only numbers
+            let afterCode = noSpaces[range.upperBound...]
+            return String(afterCode.filter { $0.isNumber })
+        }
+        
+        // If no country code found, just return numbers
+        return noSpaces.filter { $0.isNumber }
+    }
+    
+    
+    func extractLocalNumber(from phoneNumber: String) -> String? {
+        let numbersOnly = String(phoneNumber).filter { $0.isNumber }
+        return numbersOnly.isEmpty ? nil : numbersOnly
+    }
 }
