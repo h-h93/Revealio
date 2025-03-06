@@ -51,4 +51,5 @@ enum RVError: String, Error {
     case captchaCheckFailed = "Captcha check failed"
     case secondaryAuthRequired = "Secondary authentication required"
     case invalidVerificationCode = "Invalid verification code"
+    case notLoggedIn = "Please Log In"
 }

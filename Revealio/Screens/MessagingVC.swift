@@ -8,31 +8,25 @@ import UIKit
 import InputBarAccessoryView
 import Firebase
 
-class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewControllerProtocol {
-    var conversationsListener: ListenerRegistration?
+class MessagingVC: UICollectionViewController, UICollectionViewDelegateFlowLayout, RVDataLoadingVC, UIViewControllerProtocol {
     var alertVC: RVAlertVC!
     var loadingAnimationContainerView: UIView!
-    var conversation = [ConversationDocument]()
-    var dataSource: UICollectionViewDiffableDataSource<MessageSectionHeader, Message>!
-    var recipient: String!
-    var messages = [Message]()
+    var conversation: ConversationDocument!
+    var dataSource: UICollectionViewDiffableDataSource<MessageSectionHeader, MessageDoc>!
+    var messages = [MessageDoc]()
     var messageHeader = [MessageSectionHeader]()
     var sendingMessage = false
     let customInputView = RVInputAccessoryView()
-    var messageList = [MessageSectionHeader: [Message]]()
+    var messageList = [MessageSectionHeader: [MessageDoc]]()
     let layout = UICollectionViewFlowLayout()
     let db = Firestore.firestore()
     //let emptyStateView = MZEmptyStateView(message: "Nothing to see here... Yet.")
 
-    override init(collectionViewLayout layout: UICollectionViewLayout) {
+
+    init(conversation: ConversationDocument) {
         super.init(collectionViewLayout: self.layout)
+        self.conversation = conversation
         self.layout.headerReferenceSize = CGSize(width: self.collectionView.frame.size.width, height: 50)
-    }
-
-
-    convenience init(recipient: String) {
-        self.init(collectionViewLayout: UICollectionViewFlowLayout())
-        self.recipient = recipient
     }
 
 
@@ -42,10 +36,8 @@ class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewController
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
-        Task {
-            await loadMessages()
-            configureDataSource()
-        }
+        configureDataSource()
+        loadMessages()
     }
 
 
@@ -54,31 +46,46 @@ class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewController
     }
 
 
+    override func viewWillDisappear(_ animated: Bool) {
+        FirebaseService.shared.cancelMessageLisener()
+    }
+
+
     func configure() {
         view.backgroundColor = .systemBackground
         let collectionView = RVCollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.register(RVMessageCell.self, forCellWithReuseIdentifier: RVMessageCell.reuseID)
+        collectionView.register(CollectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: CollectionHeaderView.reuseIdentifier)
         self.collectionView = collectionView
         customInputView.delegate = self
         self.collectionView.dataSource = dataSource
     }
 
 
-    func loadMessages() async {
-        // guard let conversationId = conversation?.id else { return }
-        //conversation = await FirebaseService.shared.getChatList()
-        
+    func loadMessages() {
+        guard let conversationId = conversation?.id else { return }
+        do {
+            try FirebaseService.shared.getMessages(documentID: conversationId, completion: { [weak self] messageDocuments in
+                self?.messages = messageDocuments
+                DispatchQueue.main.async {
+                    guard let messages = self?.messages else { return }
+                    self?.updateUI(with: messages)
+                }
+            })
+        } catch {
+            presentRVAlert(title: error.localizedDescription, message: "", buttonTitle: "OK")
+        }
     }
 
 
     // start the process to update our UI with new messages
-    func updateUI(with chatMessages: [Message]) {
+    func updateUI(with chatMessages: [MessageDoc]) {
         if !chatMessages.isEmpty {
             messageHeader.removeAll()
-            // emptyStateView.removeFromSuperview()
-
+            //emptyStateView.removeFromSuperview()
             // group messages into a temporary dictionary based on their date (after we format it)
             let messagesByDateTime = Dictionary(grouping: chatMessages) { (element) -> Date in
-                let date = Date().formatDateToString(date: element.timestamp)
+                let date = Date().formatDateToString(date: element.message.timestamp)
                 let simplifiedDate = Date().formatStringToShortDate(string: date)
                 return simplifiedDate
             }
@@ -88,7 +95,7 @@ class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewController
                 let header = MessageSectionHeader(date: key)
                 messageHeader.append(header)
                 let value = messagesByDateTime[key]
-                messageList[header] = value
+                messageList[header] = value ?? []
             }
             self.updateDataSource()
         } else {
@@ -99,7 +106,7 @@ class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewController
 
 
     func updateDataSource() {
-        var snapshot = NSDiffableDataSourceSnapshot<MessageSectionHeader, Message>()
+        var snapshot = NSDiffableDataSourceSnapshot<MessageSectionHeader, MessageDoc>()
         messageHeader.forEach { key in
             snapshot.appendSections([key])
             snapshot.appendItems(messageList[key] ?? [], toSection: key)
@@ -109,7 +116,7 @@ class MessagingVC: UICollectionViewController, RVDataLoadingVC, UIViewController
     }
 
 
-    func processSnapshot(snapshot: NSDiffableDataSourceSnapshot<MessageSectionHeader, Message>) {
+    func processSnapshot(snapshot: NSDiffableDataSourceSnapshot<MessageSectionHeader, MessageDoc>) {
         DispatchQueue.main.async {
             if self.sendingMessage {
                 self.collectionView.scrollToBottom(snapshot: self.dataSource.snapshot())

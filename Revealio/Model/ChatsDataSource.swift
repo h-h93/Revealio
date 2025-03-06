@@ -22,7 +22,6 @@ class ChatsDataSource: NSObject, UITableViewDataSource {
             self.chats = chats
             self.reloadTableViewClosure?()
         }
-        print(chats)
     }
 
 
@@ -42,10 +41,7 @@ class ChatsDataSource: NSObject, UITableViewDataSource {
             cell.textLabel?.text = "Video"
         case MessageType.image, MessageType.gif, MessageType.drawing:
             cell.textLabel?.text = "Image"
-        default:
-            break
-        }
-
+        } 
         return cell
     }
 }

@@ -98,9 +98,8 @@ class ChatsVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
 
 
 extension ChatsVC: ChatListVCProtocol {
-    func didSelectUser(_ chat: Conversation) {
-        // alter this
-        let messagingVC = MessagingVC(recipient: chat.conversation.participants.first ?? "")
+    func didSelectUser(_ chat: ConversationDocument) {
+        let messagingVC = MessagingVC(conversation: chat)
         navigationController?.pushViewController(messagingVC, animated: true)
     }
 

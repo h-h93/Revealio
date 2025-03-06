@@ -8,7 +8,7 @@ import UIKit
 import InputBarAccessoryView
 
 protocol ChatListVCProtocol: AnyObject {
-    func didSelectUser(_ chat: Conversation)
+    func didSelectUser(_ chat: ConversationDocument)
 }
 
 class ChatListVC: UIViewController {
@@ -52,7 +52,6 @@ class ChatListVC: UIViewController {
             tableView.reloadData()
             datasource.reloadTableViewClosure = { [weak self] in
                 self?.tableView.reloadData()
-                print(self?.datasource.chats)
             }
         }
     }
@@ -80,7 +79,7 @@ extension ChatListVC: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-       // let recipient = datasource.chats[indexPath.row].conversation.participants.first
-       // delegate?.didSelectUser(datasource.chats[indexPath.row])
+        let recipient = datasource.chats[indexPath.row]
+        delegate?.didSelectUser(datasource.chats[indexPath.row])
     }
 }

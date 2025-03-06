@@ -18,6 +18,7 @@ class FirebaseService {
     private let db = Firestore.firestore()
     private let storage = Storage.storage().reference()
     private var chatListenerTask: Task<Void, Never>?
+    private var messageListenerTask: Task<Void, Never>?
 
     init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
 
@@ -70,6 +71,39 @@ class FirebaseService {
     }
 
 
+    // MARK: create new user data entry in the DB
+    func createInitialUserEntry(user: User) {
+        guard let auth = Auth.auth().currentUser else { return }
+        let docRef = db.collection("Users").document(auth.uid)
+        var dataForNewUser = [
+            "displayName": user.displayName,
+            "photoURL": user.photoURL ?? "",
+            "createdAt": user.createdAt,
+            "lastSeen": user.lastSeen,
+            "phoneNumber": user.phoneNumber,
+        ] as [String: Any]
+        let profilePic = UIImage(contentsOfFile: user.photoURL ?? "")
+
+        docRef.getDocument { (snapshot, error) in
+            if let document = snapshot {
+                if !document.exists {
+                    docRef.setData(dataForNewUser)
+                    if profilePic == Images.defaultProfileImage {
+                        dataForNewUser.updateValue("", forKey: "photoURL")
+                    } else {
+                        guard let profilePic = profilePic else { return }
+                        self.uploadProfilePic(image: profilePic.jpegData(compressionQuality: 1)!)
+                    }
+                }
+            }
+
+            if let err = error {
+                print(err.localizedDescription)
+            }
+        }
+    }
+
+
     func checkDocumentExists(collectionName: String, fieldName: String?, exists: @escaping (Bool) -> Void) {
         guard let fieldName = fieldName else {
             exists(false)
@@ -100,12 +134,11 @@ class FirebaseService {
 
 
     func getChatList(completion: @escaping ([ConversationDocument]) -> Void) {
+        cancelChatListener()
         guard let auth = Auth.auth().currentUser else {
             completion([])
             return
         }
-
-        cancelChatListener()
 
         let collectionRef = db.collection(FirebaseCollections.conversations.rawValue)
         let query = collectionRef.whereField("participants", arrayContains: auth.uid)
@@ -150,54 +183,89 @@ class FirebaseService {
     }
 
 
+    func cancelMessageLisener() {
+        messageListenerTask?.cancel()
+        messageListenerTask = nil
+    }
+
+
     // Don't forget to cancel when appropriate (e.g., deinit)
-    deinit { cancelChatListener() }
+    deinit {
+        cancelChatListener()
+        cancelMessageLisener()
+    }
 
 
-    func getMessages(documentID: String?) async throws {
-        guard let auth = Auth.auth().currentUser else { return  }
-        guard let documentID = documentID else { return }
+    func getMessages(documentID: String?, completion: @escaping ([MessageDoc]) -> Void) throws {
+        guard let auth = Auth.auth().currentUser else { throw RVError.notLoggedIn }
+        guard let documentID = documentID else { throw RVError.noData }
+
         // Reference the nested collection directly
         let messagesRef = db.collection(FirebaseCollections.conversations.rawValue)
             .document(documentID)
             .collection(FirebaseCollections.messages.rawValue)
-        let snapshot = try await messagesRef.getDocuments()
-        for document in snapshot.documents {
-            print("\(document.documentID) => \(document.data())")
+        let listener = messagesRef.addSnapshotListener { snapshot, error in
+            if let error = error {
+                print("Error fetching conversations: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+
+            guard let documents = snapshot?.documents else {
+                print("No conversations found")
+                completion([])
+                return
+            }
+
+            let docs = documents.compactMap { document in
+                return try? document.data(as: MessageDoc.self)
+            }
+
+            // Call the completion handler with the results
+            completion(docs)
         }
+
+        // Store the listener so it can be cancelled later
+        messageListenerTask = Task {
+            // Keep the listener alive until the task is cancelled
+            await withTaskCancellationHandler {
+                try? await Task.sleep(for: .seconds(3600)) // Keep alive for an hour
+            } onCancel: {
+                listener.remove()
+            }
+        }
+
+//        let snapshot = try await messagesRef.getDocuments()
+//        for document in snapshot.documents {
+//            //print("\(document.documentID) => \(document.data())")
+//            messages.append(try document.data(as: MessageDoc.self))
+//        }
     }
 
 
-    // MARK: create new user data entry in the DB
-    func createInitialUserEntry(user: User) {
-        guard let auth = Auth.auth().currentUser else { return }
-        let docRef = db.collection("Users").document(auth.uid)
-        var dataForNewUser = [
-            "displayName": user.displayName,
-            "photoURL": user.photoURL ?? "",
-            "createdAt": user.createdAt,
-            "lastSeen": user.lastSeen,
-            "phoneNumber": user.phoneNumber,
-        ] as [String: Any]
-        let profilePic = UIImage(contentsOfFile: user.photoURL ?? "")
-
-        docRef.getDocument { (snapshot, error) in
-            if let document = snapshot {
-                if !document.exists {
-                    docRef.setData(dataForNewUser)
-                    if profilePic == Images.defaultProfileImage {
-                        dataForNewUser.updateValue("", forKey: "photoURL")
-                    } else {
-                        guard let profilePic = profilePic else { return }
-                        self.uploadProfilePic(image: profilePic.jpegData(compressionQuality: 1)!)
-                    }
-                }
-            }
-
-            if let err = error {
-                print(err.localizedDescription)
-            }
+    func sendMessage(toConversationID: String, message: Message) async throws {
+        guard Auth.auth().currentUser != nil else { return }
+        do {
+            let messageDoc = MessageDoc(message: message)
+            let encodedData = try Firestore.Encoder().encode(messageDoc)
+            try await db.collection(FirebaseCollections.conversations.rawValue)
+                .document(toConversationID)
+                .collection(FirebaseCollections.messages.rawValue)
+                .addDocument(data: encodedData)
+            try await db.collection(FirebaseCollections.conversations.rawValue)
+                .document(toConversationID)
+                .updateData([
+                    "metadata.lastMessage.message": message.content,
+                    "metadata.lastMessage.messageType": message.type.rawValue,
+                    "metadata.lastMessage.participant": message.senderId,
+                    "metadata.lastMessage.timestamp": message.timestamp,
+                    "metadata.updatedAt": FieldValue.serverTimestamp()
+                ])
+        } catch {
+            print("error sending message: \(error.localizedDescription)")
+            throw RVError.unableToCompleteRequest
         }
+
     }
 
 

@@ -15,22 +15,24 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
         }
     }
 
+
     override var canBecomeFirstResponder: Bool {
         return true
     }
 
+
     func configureDataSource() {
         let padding: CGFloat = 32
-        dataSource = UICollectionViewDiffableDataSource<MessageSectionHeader, Message>(collectionView: collectionView) { collectionView, indexPath, message in
+        dataSource = UICollectionViewDiffableDataSource<MessageSectionHeader, MessageDoc>(collectionView: collectionView) { collectionView, indexPath, message in
             // Configure cell
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RVMessageCell.reuseID, for: indexPath) as! RVMessageCell
-            cell.messageBubbleWidthAnchor?.constant = self.estimatedFrameForText(text: message.content ?? "").width + padding
-            if message.senderId == self.recipient {
+            cell.messageBubbleWidthAnchor?.constant = self.estimatedFrameForText(text: message.message.content ?? "").width + padding
+            if message.message.senderId == "07930632752" {
                 cell.isOutgoing = false
-                cell.messageTextLabel.text = message.content ?? ""
+                cell.messageTextLabel.text = message.message.content ?? ""
             } else {
                 cell.isOutgoing = true
-                cell.messageTextLabel.text = message.content ?? ""
+                cell.messageTextLabel.text = message.message.content ?? ""
             }
             return cell
         }
@@ -61,7 +63,7 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
         if !messageHeader.isEmpty {
             let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
             let itemsAtSection = self.dataSource.snapshot().itemIdentifiers(inSection: section)
-            height = estimatedFrameForText(text: itemsAtSection[indexPath.item].content ?? "").height
+            height = estimatedFrameForText(text: itemsAtSection[indexPath.item].message.content ?? "").height
             return CGSize(width: view.frame.width, height: height + padding)
         }
         return CGSize(width: view.frame.width, height: height)
@@ -69,44 +71,16 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
 
 
     func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
-        //guard let conversationId = conversation.conversation.id else { return }
+        guard let conversationId = conversation.id else { return }
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let currentUserId = Auth.auth().currentUser?.uid else { return }
 
         sendingMessage = true
+        let messageData = Message(senderId: currentUserId, content: text, mediaUrl: "", type: MessageType.text, timestamp: Date.now)
 
-        let messageData: [String: Any] = [
-            "senderId": currentUserId,
-            "content": text,
-            "type": MessageType.text.rawValue,
-            "timestamp": Date.now,
-            "status": [
-                "sent": Date.now,
-                "delivered": [:],
-                "read": [:]
-            ],
-            "metadata": NSNull()
-        ]
         Task {
             do {
-                // Add message
-                try await db.collection("messages")
-                    .document("conversationId")
-                    .collection("messages")
-                    .addDocument(data: messageData)
-
-                // Update conversation's last message
-                try await db.collection("conversations")
-                    .document("conversationId")
-                    .updateData([
-                        "lastMessage": [
-                            "content": text,
-                            "type": MessageType.text.rawValue,
-                            "timestamp": Date.now,
-                            "senderId": currentUserId
-                        ],
-                        "metadata.updatedAt": Date.now
-                    ])
+                try await FirebaseService.shared.sendMessage(toConversationID: conversationId, message: messageData)
             } catch {
                 self.presentRVAlert(
                     title: "Error",
