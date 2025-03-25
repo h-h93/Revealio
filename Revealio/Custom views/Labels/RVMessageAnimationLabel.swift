@@ -25,7 +25,7 @@ class RVMessageAnimationLabel: UILabel {
     
     
     private func configure() {
-        font = UIFont.systemFont(ofSize: 16)
+        font = UIFont.systemFont(ofSize: 15)
         textColor = .white
         backgroundColor = .clear
         textAlignment = .center

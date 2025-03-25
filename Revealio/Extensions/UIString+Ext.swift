@@ -35,7 +35,7 @@ extension String {
         let passwordCheck = NSPredicate(format: "SELF MATCHES %@",passwordRegx)
         return passwordCheck.evaluate(with: password)
     }
-    
+
     
     func removeCountryCode(from phoneNumber: String) -> String? {
         // First remove all spaces
@@ -56,5 +56,90 @@ extension String {
     func extractLocalNumber(from phoneNumber: String) -> String? {
         let numbersOnly = String(phoneNumber).filter { $0.isNumber }
         return numbersOnly.isEmpty ? nil : numbersOnly
+    }
+
+
+    func estimatedFrameForText(text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], context: nil)
+    }
+
+    
+    // Remove the whitespace from text if no other characters are entered
+    func formatText(_ text: String) -> String {
+        // Split the text into lines
+        var lines = text.components(separatedBy: .newlines)
+
+        // Find the last line with content
+        var lastNonEmptyLineIndex = lines.count - 1
+        while lastNonEmptyLineIndex >= 0 && lines[lastNonEmptyLineIndex].trimmingCharacters(in: .whitespaces).isEmpty {
+            lastNonEmptyLineIndex -= 1
+        }
+
+        // If we found a line with content, keep only up to that line
+        if lastNonEmptyLineIndex >= 0 {
+            lines = Array(lines[0...lastNonEmptyLineIndex])
+            return lines.joined(separator: "\n")
+        }
+
+        return text
+    }
+
+
+    // Format the text to display the short end of the text right at the end using to display date of message sent
+    func formatTextWithStylingForSubstring(text: String, smallTextSubstring: String) -> NSAttributedString {
+        // First apply the whitespace formatting
+        let formattedText = formatText(text)
+
+        // Create attributed string with default attributes
+        let attributedString = NSMutableAttributedString(string: formattedText)
+
+        // Define attributes for the main text
+        let mainAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 15),
+            .foregroundColor: UIColor.black
+        ]
+
+        // Apply main attributes to the entire string
+        attributedString.addAttributes(mainAttributes,
+                                       range: NSRange(location: 0, length: formattedText.count))
+
+        // Define attributes for the smaller text
+        let smallTextAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10),
+            .foregroundColor: UIColor.lightGray
+        ]
+
+        // Find the range of the substring to style
+        if let range = formattedText.range(of: smallTextSubstring) {
+            let nsRange = NSRange(range, in: formattedText)
+            attributedString.addAttributes(smallTextAttributes, range: nsRange)
+        }
+
+        return attributedString
+    }
+
+
+    func estimatedFrameForText(text: String, fontSize: CGFloat) -> CGRect {
+        let maxWidth = UIScreen.main.bounds.width * 0.7 // 70% of screen width
+        let size = CGSize(width: maxWidth, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+
+        let boundingRect = NSString(string: text).boundingRect(
+            with: size,
+            options: options,
+            attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: fontSize)],
+            context: nil
+        )
+
+        // Add some extra height to account for padding and prevent squashing
+        let extraHeight: CGFloat = 10
+        return CGRect(
+            x: 0,
+            y: 0,
+            width: ceil(boundingRect.width),
+            height: ceil(boundingRect.height) + extraHeight
+        )
     }
 }

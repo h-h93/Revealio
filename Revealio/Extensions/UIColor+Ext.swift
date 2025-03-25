@@ -7,6 +7,7 @@
 import UIKit
 import SwiftUI
 
+// uikit colour extension
 extension UIColor {
     static var random: UIColor {
         return UIColor(red: .random(in: 0.4...1),
@@ -16,7 +17,7 @@ extension UIColor {
     }
 }
 
-
+// swiftUI color extension
 extension Color {
     static var random: Color {
         return Color(red: .random(in: 0.4...1),

@@ -34,14 +34,28 @@ extension UIViewControllerProtocol {
 
 
 extension UIViewController {
-    // taken from stack overflow many years ago -
-    // calculates how high the frame should be for a piece of text
-    func estimatedFrameForText(text: String) -> CGRect {
-        let size = CGSize(width: 200, height: 1000)
+    func estimatedFrameForText(text: String, fontSize: CGFloat = 16) -> CGRect {
+        // Use a more dynamic width based on screen width
+        let maxWidth = UIScreen.main.bounds.width * 0.7 // 70% of screen width to leave room for padding
+        let size = CGSize(width: maxWidth, height: 1000)
         let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
-        return NSString(string: text).boundingRect(with: size, options: options, attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)], context: nil)
+
+        // Calculate the text size
+        let boundingRect = NSString(string: text).boundingRect(
+            with: size,
+            options: options,
+            attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: fontSize)],
+            context: nil
+        )
+
+        // Ensure a minimum width of 40 points for the text (excluding padding)
+        let minWidth: CGFloat = 40
+        let width = max(boundingRect.width, minWidth)
+
+        return CGRect(x: 0, y: 0, width: width, height: boundingRect.height)
     }
-    
+
+
     @objc func hideKeyboardWhenTappedAround() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false

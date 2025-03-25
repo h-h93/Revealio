@@ -100,6 +100,7 @@ class ChatsVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
 extension ChatsVC: ChatListVCProtocol {
     func didSelectUser(_ chat: ConversationDocument) {
         let messagingVC = MessagingVC(conversation: chat)
+        messagingVC.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(messagingVC, animated: true)
     }
 

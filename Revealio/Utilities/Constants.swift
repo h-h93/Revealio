@@ -24,7 +24,19 @@ enum DeviceTypes {
     static let isiPhone14 = idiom == .phone && UIScreen.main.bounds.size.height == 926.0
     static let isiPhone15 = idiom == .phone && UIScreen.main.bounds.size.height == 1080.0
     static let isiPad = idiom == .pad && UIScreen.main.bounds.size.height >= 1024.0
-    
+
+    static var screenWidth: CGFloat {
+        let window = UIApplication.shared.windows.first { $0.isKeyWindow }
+        let traitCollection = window?.traitCollection
+        let currentWidth = window?.bounds.width ?? UIScreen.main.bounds.width
+
+        if traitCollection?.horizontalSizeClass == .compact {
+            return currentWidth
+        } else {
+            return currentWidth
+        }
+    }
+
     // Zoomed detection for devices that can have different display modes
     static func isZoomed() -> Bool {
         return scale > nativeScale

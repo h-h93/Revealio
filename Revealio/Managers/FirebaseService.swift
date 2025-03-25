@@ -19,6 +19,7 @@ class FirebaseService {
     private let storage = Storage.storage().reference()
     private var chatListenerTask: Task<Void, Never>?
     private var messageListenerTask: Task<Void, Never>?
+    private var cache = NSCache<NSString, UIImage>()
 
     init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
 
@@ -204,6 +205,7 @@ class FirebaseService {
         let messagesRef = db.collection(FirebaseCollections.conversations.rawValue)
             .document(documentID)
             .collection(FirebaseCollections.messages.rawValue)
+            .order(by: "message.timestamp", descending: false)
         let listener = messagesRef.addSnapshotListener { snapshot, error in
             if let error = error {
                 print("Error fetching conversations: \(error.localizedDescription)")
@@ -218,6 +220,7 @@ class FirebaseService {
             }
 
             let docs = documents.compactMap { document in
+                let messageDoc = try? document.data(as: MessageDoc.self)
                 return try? document.data(as: MessageDoc.self)
             }
 
@@ -265,7 +268,64 @@ class FirebaseService {
             print("error sending message: \(error.localizedDescription)")
             throw RVError.unableToCompleteRequest
         }
+    }
 
+
+    func sendPictureMessage(toConversationID: String, imageData: [Data], message: Message) async throws {
+        guard Auth.auth().currentUser != nil else { return }
+        do {
+            for (index, item) in imageData.enumerated() {
+                let data: Data = item
+                let metadata = StorageMetadata()
+                metadata.contentType = "image/jpeg"
+                let id = UUID().uuidString
+                let mediaStoragePath = "\(toConversationID)/media/\(toConversationID)-\(id).jpg"
+                let ref = storage.child(mediaStoragePath)
+                var uploadIsPaused = false
+                var uploadIsCancelled = false
+                var uploadFinished = false
+                let uploadTask = try await ref.putDataAsync(data, metadata: metadata) { progress in
+                    guard let progress = progress else { return }
+                    if progress.isPaused {
+                        uploadIsPaused = true
+                    } else if progress.isCancelled {
+                        uploadIsCancelled = true
+                    } else if progress.isFinished {
+                        uploadFinished = true
+                        return
+                    }
+                }
+
+                if uploadFinished {
+                    let mediaURL = try await ref.downloadURL().absoluteString
+                    let imageMessage = Message(senderId: message.senderId, content: nil, mediaUrl: mediaURL, type: .image, timestamp: message.timestamp)
+                    try await sendMessage(toConversationID: toConversationID, message: imageMessage)
+                }
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+
+
+    func getImages(urlString: String) async -> UIImage? {
+        let cacheKey = NSString(string: urlString)
+        if let image = cache.object(forKey: cacheKey) { return image }
+        guard let url = URL(string: urlString) else { return nil }
+        let config = URLSessionConfiguration.default
+        config.waitsForConnectivity = true
+        config.allowsCellularAccess = true
+        config.timeoutIntervalForRequest = 30 // 30 seconds
+        config.timeoutIntervalForResource = 60
+        let session = URLSession(configuration: config)
+        do {
+            let (data, _) = try await session.data(from: url)
+            guard let image = UIImage(data: data) else { return nil }
+            self.cache.setObject(image, forKey: cacheKey)
+            return image
+        } catch {
+            return nil
+        }
     }
 
 

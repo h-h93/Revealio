@@ -1,12 +1,13 @@
 //
-//  RVMessageBubbleView.swift
+//  RVAnimationMessageBubbleView.swift
 //  Revealio
 //
-//  Created by hanif hussain on 07/02/2025.
+//  Created by hanif hussain on 22/03/2025.
 //
+
 import UIKit
 
-class RVMessageBubbleView: UIView {
+class RVAnimationMessageBubbleView: UIView {
     private var currentUserIsSender = true {
         didSet {
             arrowDirection = currentUserIsSender ? .right : .left
@@ -55,12 +56,12 @@ class RVMessageBubbleView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    
+
+
     convenience init(colour: UIColor) {
         self.init(frame: .zero)
         self.colour = colour
@@ -77,7 +78,7 @@ class RVMessageBubbleView: UIView {
         let right = rect.width - borderWidth
         let top = borderWidth
         let left = borderWidth
-        
+
         if arrowDirection == .right {
             bezierPath.move(to: CGPoint(x: right - 22, y: bottom)) // 5
             bezierPath.addLine(to: CGPoint(x: 17 + borderWidth, y: bottom))
@@ -127,14 +128,14 @@ class RVMessageBubbleView: UIView {
         }
     }
 
-    
+
     private func configure(colour: UIColor) {
         backgroundColor = colour.withAlphaComponent(0.8)
         // Set clipsToBounds to true to ensure the corners are properly rounded
-        self.clipsToBounds = false
+        self.clipsToBounds = true
         // Round the corners immediately
         self.layer.cornerRadius = 16
-        self.layer.masksToBounds = false
+        self.layer.masksToBounds = true
     }
 
 
@@ -143,4 +144,3 @@ class RVMessageBubbleView: UIView {
         self.currentUserIsSender = isOutgoing
     }
 }
-

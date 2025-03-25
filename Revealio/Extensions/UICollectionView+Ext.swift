@@ -23,4 +23,27 @@ extension UICollectionView {
             self.scrollToItem(at: lastItemIndex, at: .bottom, animated: false)
         }
     }
+
+
+    func estimatedFrameForText(text: String, fontSize: CGFloat) -> CGRect {
+        let maxWidth = UIScreen.main.bounds.width * 0.7 // 70% of screen width
+        let size = CGSize(width: maxWidth, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+
+        let boundingRect = NSString(string: text).boundingRect(
+            with: size,
+            options: options,
+            attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: fontSize)],
+            context: nil
+        )
+
+        // Add some extra height to account for padding and prevent squashing
+        let extraHeight: CGFloat = 10
+        return CGRect(
+            x: 0,
+            y: 0,
+            width: ceil(boundingRect.width),
+            height: ceil(boundingRect.height) + extraHeight
+        )
+    }
 }

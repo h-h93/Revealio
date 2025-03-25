@@ -8,32 +8,24 @@ import UIKit
 import InputBarAccessoryView
 import FirebaseAuth
 
-extension MessagingVC: InputBarAccessoryViewDelegate {
-    override var inputAccessoryView: UIView? {
-        get {
-            return customInputView
-        }
-    }
-
-
-    override var canBecomeFirstResponder: Bool {
-        return true
-    }
-
-
+extension MessageViewController: InputBarAccessoryViewDelegate {
+    
     func configureDataSource() {
-        let padding: CGFloat = 32
+        let currentUserId = Auth.auth().currentUser?.uid
+        let padding: CGFloat = 45
+        
         dataSource = UICollectionViewDiffableDataSource<MessageSectionHeader, MessageDoc>(collectionView: collectionView) { collectionView, indexPath, message in
             // Configure cell
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RVMessageCell.reuseID, for: indexPath) as! RVMessageCell
-            cell.messageBubbleWidthAnchor?.constant = self.estimatedFrameForText(text: message.message.content ?? "").width + padding
-            if message.message.senderId == "07930632752" {
-                cell.isOutgoing = false
-                cell.messageTextLabel.text = message.message.content ?? ""
-            } else {
+            // Configure the rest of the cell
+            if message.message.senderId == currentUserId {
                 cell.isOutgoing = true
-                cell.messageTextLabel.text = message.message.content ?? ""
+            } else {
+                cell.isOutgoing = false
             }
+
+            cell.setMessage(message.message)
+
             return cell
         }
         configureHeader()
@@ -59,7 +51,8 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
     // I work out the height of each cell by checking the height for each of the messages text
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height: CGFloat = 80
-        let padding: CGFloat = 20
+        let padding: CGFloat = 25 // Increased padding
+
         if !messageHeader.isEmpty {
             let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
             let itemsAtSection = self.dataSource.snapshot().itemIdentifiers(inSection: section)
@@ -70,7 +63,7 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
     }
 
 
-    func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
+    func sendMessage(text: String) {
         guard let conversationId = conversation.id else { return }
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let currentUserId = Auth.auth().currentUser?.uid else { return }
@@ -81,6 +74,26 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
         Task {
             do {
                 try await FirebaseService.shared.sendMessage(toConversationID: conversationId, message: messageData)
+            } catch {
+                self.presentRVAlert(
+                    title: "Error",
+                    message: "Failed to send message: \(error.localizedDescription)",
+                    buttonTitle: "OK"
+                )
+            }
+        }
+    }
+
+
+
+    func sendPictureMessage(images: [Data]) {
+        guard let conversationId = conversation.id else { return }
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        sendingMessage = true
+        let messageData = Message(senderId: currentUserId, content: nil, mediaUrl: "", type: MessageType.text, timestamp: Date.now)
+        Task {
+            do {
+                try await FirebaseService.shared.sendPictureMessage(toConversationID: conversationId, imageData: images, message: messageData)
             } catch {
                 self.presentRVAlert(
                     title: "Error",
@@ -111,7 +124,36 @@ extension MessagingVC: InputBarAccessoryViewDelegate {
 
 
     func configureCellDate(collectionHeaderView: CollectionHeaderView, index: Int) -> CollectionHeaderView {
-        collectionHeaderView.label.text = Date().formatStringToShortDateForCellHeader(date: messageHeader[index].date)
+        guard index < messageHeader.count else { return collectionHeaderView }
+
+        let header = messageHeader[index]
+        let headerDate = header.date
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+
+        let dateString: String
+
+        if calendar.isDate(headerDate, inSameDayAs: today) {
+            dateString = "Today"
+        } else if calendar.isDate(headerDate, inSameDayAs: yesterday) {
+            dateString = "Yesterday"
+        } else if calendar.isDate(headerDate, equalTo: today, toGranularity: .weekOfYear) {
+            // Same week
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE" // Day name (Monday, Tuesday, etc.)
+            dateString = formatter.string(from: headerDate)
+        } else {
+            // Different week/year
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM d, yyyy" // January 1, 2023
+            dateString = formatter.string(from: headerDate)
+        }
+
+        // Update your collection header view with the formatted date string
+        collectionHeaderView.dateLabel.text = dateString
+
         return collectionHeaderView
     }
 }

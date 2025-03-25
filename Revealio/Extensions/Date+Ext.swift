@@ -38,4 +38,12 @@ extension Date {
         let result = dateFormatter.string(from: date)
         return result
     }
+
+
+    func formatStringToShortDateForMessage(date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "H:mm"
+        let result = dateFormatter.string(from: date)
+        return result
+    }
 }
