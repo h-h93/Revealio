@@ -52,13 +52,18 @@ extension MessageViewController: InputBarAccessoryViewDelegate {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height: CGFloat = 80
         let padding: CGFloat = 25 // Increased padding
+        let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
+        let itemsAtSection = self.dataSource.snapshot().itemIdentifiers(inSection: section)
 
-        if !messageHeader.isEmpty {
-            let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
-            let itemsAtSection = self.dataSource.snapshot().itemIdentifiers(inSection: section)
-            height = estimatedFrameForText(text: itemsAtSection[indexPath.item].message.content ?? "").height
-            return CGSize(width: view.frame.width, height: height + padding)
+        if itemsAtSection[indexPath.item].message.type == .text {
+            if !messageHeader.isEmpty {
+                height = estimatedFrameForText(text: itemsAtSection[indexPath.item].message.content ?? "").height
+                return CGSize(width: view.frame.width, height: height + padding)
+            }
+        } else if itemsAtSection[indexPath.item].message.type == .image {
+            return CGSize(width: view.frame.width, height: 250)
         }
+
         return CGSize(width: view.frame.width, height: height)
     }
 

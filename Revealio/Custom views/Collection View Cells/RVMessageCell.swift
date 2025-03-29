@@ -11,11 +11,13 @@ class RVMessageCell: UICollectionViewCell {
     private let messageTextLabel = RVMessageLabel(textAlignment: .left)
     private let timestampLabel = RVMessageDateLabel(textAlignment: .right)
     private let messageBubbleView = RVMessageBubbleView(colour: .clear)
-    private let imageView = RVImageView(frame: .zero)
+    private let imageView = RVMessageImageView(frame: .zero)
     private let profilePic = UIImageView()
     var messageBubbleWidthAnchor: NSLayoutConstraint?
     var messageBubbleHeightAnchor: NSLayoutConstraint?
     var messageBubbleRightAnchor: NSLayoutConstraint?
+    private var imageViewTrailingAnchor: NSLayoutConstraint?
+    private var imageViewLeadingAnchor: NSLayoutConstraint?
     var profilePicRightAnchor: NSLayoutConstraint?
 
     var isOutgoing: Bool = false {
@@ -43,8 +45,8 @@ class RVMessageCell: UICollectionViewCell {
     private func configure() {
         self.backgroundColor = .clear
         configureImageView()
-        addSubviews(profilePic, messageBubbleView, imageView, timestampLabel)
-        messageBubbleView.addSubview(messageTextLabel)
+        addSubviews(profilePic, messageBubbleView, timestampLabel)
+        messageBubbleView.addSubviews(messageTextLabel, imageView)
         updateBubbleAppearance()
         
         messageBubbleWidthAnchor = messageBubbleView.widthAnchor.constraint(equalToConstant: 220)
@@ -63,46 +65,55 @@ class RVMessageCell: UICollectionViewCell {
             messageTextLabel.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -2),
             messageTextLabel.heightAnchor.constraint(equalTo: messageBubbleView.heightAnchor),
 
-            imageView.topAnchor.constraint(equalTo: messageBubbleView.topAnchor, constant: 5),
-            imageView.leadingAnchor.constraint(equalTo: messageBubbleView.leadingAnchor, constant: 10),
-            imageView.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -2),
-            imageView.heightAnchor.constraint(equalTo: messageBubbleView.heightAnchor),
+            imageView.topAnchor.constraint(equalTo: messageBubbleView.topAnchor, constant: 4),
+            imageView.heightAnchor.constraint(equalTo: messageBubbleView.heightAnchor, constant: -8),
 
             timestampLabel.topAnchor.constraint(equalTo: messageBubbleView.bottomAnchor, constant: -17),
             timestampLabel.leadingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -60),
-            timestampLabel.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -10),
+            timestampLabel.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -15),
             timestampLabel.heightAnchor.constraint(equalToConstant: 13)
         ])
     }
     
     
     private func updateBubbleAppearance() {
+        messageBubbleRightAnchor?.isActive = false
+        messageBubbleRightAnchor = nil
+        imageViewLeadingAnchor?.isActive = false
+        imageViewTrailingAnchor?.isActive = false
+        imageViewLeadingAnchor = nil
+        imageViewTrailingAnchor = nil
+
         if isOutgoing == false {
             profilePic.isHidden = false
             messageBubbleView.backgroundColor = .clear
             messageBubbleView.colour = .systemGreen.withAlphaComponent(0.85)
             profilePicRightAnchor?.isActive = false
             profilePicRightAnchor = nil
-            messageBubbleRightAnchor?.isActive = false
-            messageBubbleRightAnchor = nil
+
             messageBubbleView.updateCorners(isOutgoing: false)
 
             profilePicRightAnchor = profilePic.leadingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.leadingAnchor, constant: 8)
             profilePicRightAnchor?.isActive = true
             
             messageBubbleRightAnchor = messageBubbleView.leadingAnchor.constraint(equalTo: self.profilePic.trailingAnchor, constant: 8)
-            messageBubbleRightAnchor?.isActive = true
+
+            imageViewLeadingAnchor = imageView.leadingAnchor.constraint(equalTo: messageBubbleView.leadingAnchor, constant: 8)
+            imageViewTrailingAnchor = imageView.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -4)
         } else {
             profilePic.isHidden = true
-            messageBubbleRightAnchor?.isActive = false
-            messageBubbleRightAnchor = nil
             messageBubbleView.backgroundColor = .clear
             messageBubbleView.colour = .systemBlue.withAlphaComponent(0.8)
 
             messageBubbleRightAnchor = messageBubbleView.trailingAnchor.constraint(equalTo: self.safeAreaLayoutGuide.trailingAnchor, constant: -8)
-            messageBubbleRightAnchor?.isActive = true
             messageBubbleView.updateCorners(isOutgoing: true)
+
+            imageViewLeadingAnchor = imageView.leadingAnchor.constraint(equalTo: messageBubbleView.leadingAnchor, constant: 4)
+            imageViewTrailingAnchor = imageView.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -8)
         }
+        messageBubbleRightAnchor?.isActive = true
+        imageViewLeadingAnchor?.isActive = true
+        imageViewTrailingAnchor?.isActive = true
     }
     
     
@@ -124,22 +135,32 @@ class RVMessageCell: UICollectionViewCell {
             self.messageTextLabel.text = message.content
             messageTextLabel.sizeToFit()
             messageTextLabel.alignTextToTop()
-            setNeedsLayout()
+            messageBubbleView.updateDrawingFill(isText: true)
         } else if message.type == .video {
             messageTextLabel.isHidden = true
             imageView.isHidden = true
+            messageBubbleView.updateDrawingFill(isText: false)
 
         } else {
             messageTextLabel.isHidden = true
             imageView.isHidden = false
-            Task(priority: .background) {
-                guard let urlString = message.mediaUrl else { return }
-                imageView.image = await FirebaseService.shared.getImages(urlString: urlString)
-
-            }
+            guard let urlString = message.mediaUrl else { return }
+            messageBubbleWidthAnchor?.constant = 220
+            messageBubbleView.backgroundColor = .systemBackground
+            messageBubbleView.borderWidth = 3
+            imageView.setImage(url: urlString)
+            messageBubbleView.updateDrawingFill(isText: false)
         }
 
+//        let strokeTextAttributes = [
+//            NSAttributedString.Key.strokeColor : UIColor.black,
+//            NSAttributedString.Key.foregroundColor : UIColor.white,
+//            NSAttributedString.Key.strokeWidth : -3.0,
+//            NSAttributedString.Key.font : UIFont.systemFont(ofSize: 10, weight: .black)]
+//        as [NSAttributedString.Key : Any]
+
         timestampLabel.text = date
+        setNeedsLayout()
     }
 
 
