@@ -23,7 +23,8 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     private var phPickerVC: PHPickerViewController!
     private var cancellables = Set<AnyCancellable>()
     private var imageURL: String?
-    
+    private var pickerTapGesture: UITapGestureRecognizer?
+
     init(phoneNumber: String) {
         super.init(nibName: nil, bundle: nil)
         self.phoneNumber = phoneNumber
@@ -62,7 +63,10 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     
     private func configureProfilePictureView() {
         imagePicker.delegate = self
-        let pickerTapGesture = UITapGestureRecognizer(target: self, action: #selector(uploadImageTapped))
+        if pickerTapGesture != nil {
+            self.pickerTapGesture = nil
+        }
+        pickerTapGesture = UITapGestureRecognizer(target: self, action: #selector(uploadImageTapped))
         
         profilePictureView.isUserInteractionEnabled = true
         profilePictureView.layer.masksToBounds = false
@@ -71,7 +75,7 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         profilePictureView.clipsToBounds = true
         profilePictureView.frame = CGRect(x: 0, y: 0, width: profileImageWidthHeight, height: profileImageWidthHeight)
         profilePictureView.layer.cornerRadius = profilePictureView.frame.height / 2
-        profilePictureView.addGestureRecognizer(pickerTapGesture)
+        profilePictureView.addGestureRecognizer(pickerTapGesture!)
         profilePictureView.image = Images.defaultProfileImage
         
         addImageButton.configuration?.image = UIImage(systemName: "plus.circle.fill")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal)

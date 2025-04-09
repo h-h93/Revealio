@@ -12,7 +12,6 @@ extension MessageViewController: InputBarAccessoryViewDelegate {
     
     func configureDataSource() {
         let currentUserId = Auth.auth().currentUser?.uid
-        let padding: CGFloat = 45
         
         dataSource = UICollectionViewDiffableDataSource<MessageSectionHeader, MessageDoc>(collectionView: collectionView) { collectionView, indexPath, message in
             // Configure cell
@@ -51,7 +50,7 @@ extension MessageViewController: InputBarAccessoryViewDelegate {
     // I work out the height of each cell by checking the height for each of the messages text
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         var height: CGFloat = 80
-        let padding: CGFloat = 25 // Increased padding
+        let padding: CGFloat = 26 // Increased padding
         let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
         let itemsAtSection = self.dataSource.snapshot().itemIdentifiers(inSection: section)
 
@@ -88,7 +87,6 @@ extension MessageViewController: InputBarAccessoryViewDelegate {
             }
         }
     }
-
 
 
     func sendPictureMessage(images: [Data]) {

@@ -8,7 +8,7 @@ import UIKit
 
 class RVMessageCell: UICollectionViewCell {
     static let reuseID = "Cell"
-    private let messageTextLabel = RVMessageLabel(textAlignment: .left)
+    private let messageTextLabel = RVMessageLabel(textAlignment: .natural)
     private let timestampLabel = RVMessageDateLabel(textAlignment: .right)
     private let messageBubbleView = RVMessageBubbleView(colour: .clear)
     private let imageView = RVMessageImageView(frame: .zero)
@@ -60,9 +60,9 @@ class RVMessageCell: UICollectionViewCell {
             messageBubbleView.topAnchor.constraint(equalTo: self.topAnchor),         // No top padding
             messageBubbleView.bottomAnchor.constraint(equalTo: self.bottomAnchor),   // No bottom padding
 
-            messageTextLabel.topAnchor.constraint(equalTo: messageBubbleView.topAnchor, constant: 5),
-            messageTextLabel.leadingAnchor.constraint(equalTo: messageBubbleView.leadingAnchor, constant: 10),
-            messageTextLabel.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -2),
+            messageTextLabel.topAnchor.constraint(equalTo: messageBubbleView.topAnchor, constant: 6),
+            messageTextLabel.leadingAnchor.constraint(equalTo: messageBubbleView.leadingAnchor, constant: 11),
+            messageTextLabel.trailingAnchor.constraint(equalTo: messageBubbleView.trailingAnchor, constant: -5),
             messageTextLabel.heightAnchor.constraint(equalTo: messageBubbleView.heightAnchor),
 
             imageView.topAnchor.constraint(equalTo: messageBubbleView.topAnchor, constant: 4),
@@ -158,7 +158,6 @@ class RVMessageCell: UICollectionViewCell {
 //            NSAttributedString.Key.strokeWidth : -3.0,
 //            NSAttributedString.Key.font : UIFont.systemFont(ofSize: 10, weight: .black)]
 //        as [NSAttributedString.Key : Any]
-
         timestampLabel.text = date
         setNeedsLayout()
     }
@@ -170,7 +169,7 @@ class RVMessageCell: UICollectionViewCell {
             // Calculate the estimated width based on text content
             let messageText = message.content ?? ""
             let estimatedWidth = String().estimatedFrameForText(text: messageText, fontSize: 15).width
-            let totalPadding: CGFloat = 24 // 12 points on each side inside the bubble
+            let totalPadding: CGFloat = 28 // 14 points on each side inside the bubble
 
             // Set a minimum width for the bubble to prevent text crushing
             let minimumBubbleWidth = 130.0 // Adjust as needed

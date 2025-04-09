@@ -7,7 +7,8 @@
 import UIKit
 
 class RVMessageLabel: UILabel {
-    
+    private var longPressGestureRecognizer: UILongPressGestureRecognizer!
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         configure()
@@ -23,6 +24,40 @@ class RVMessageLabel: UILabel {
         self.init(frame: .zero)
         self.textAlignment = textAlignment
     }
+
+
+    @objc func showMenu(sender: AnyObject?) {
+        self.becomeFirstResponder()
+
+        let menu = UIMenuController.shared
+
+        if !menu.isMenuVisible {
+            menu.setTargetRect(bounds, in: self)
+            menu.setMenuVisible(true, animated: true)
+        }
+    }
+
+
+    override func copy(_ sender: Any?) {
+        let board = UIPasteboard.general
+
+        board.string = text
+
+        let menu = UIMenuController.shared
+
+        menu.setMenuVisible(false, animated: true)
+    }
+
+
+    override var canBecomeFirstResponder: Bool {
+        return true
+    }
+
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        return action == #selector(UIResponderStandardEditActions.copy)
+    }
+
 
     // MARK: functions to make sure text is top aligned in label
     override func textRect(forBounds bounds: CGRect, limitedToNumberOfLines numberOfLines: Int) -> CGRect {
@@ -43,6 +78,12 @@ class RVMessageLabel: UILabel {
         font = UIFont.systemFont(ofSize: 15)
         translatesAutoresizingMaskIntoConstraints = false
         lineBreakMode = .byWordWrapping
-
+        isUserInteractionEnabled = true
+        if let existingGesture = longPressGestureRecognizer {
+            self.removeGestureRecognizer(existingGesture)
+            longPressGestureRecognizer = nil
+        }
+        longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(self.showMenu(sender:)))
+        addGestureRecognizer(longPressGestureRecognizer)
     }
 }

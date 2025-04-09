@@ -169,4 +169,22 @@ class MessageViewController: UICollectionViewController, UICollectionViewDelegat
             }
         }
     }
+
+
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let itemAtSection = dataSource.itemIdentifier(for: indexPath) else {
+            return
+        }
+
+
+        if itemAtSection.message.type == .text {
+            print("text")
+
+        } else if itemAtSection.message.type ==  .image {
+            let imageVC = MessageImageView(imageUrl: itemAtSection.message.mediaUrl)
+            imageVC.modalPresentationStyle = .fullScreen
+            navigationController?.pushViewController(imageVC, animated: true)
+
+        }
+    }
 }

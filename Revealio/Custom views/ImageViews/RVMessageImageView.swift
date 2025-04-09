@@ -26,13 +26,13 @@ class RVMessageImageView: UIImageView {
         layer.cornerRadius = 16
         layer.masksToBounds = true
         contentMode = .scaleAspectFill
+        alpha = 0.9
     }
 
 
     func setImage(url: String) {
         Task(priority: .background) {
             self.image = await FirebaseService.shared.getImages(urlString: url)
-            alpha = 0.9
             DispatchQueue.main.async {
                 self.setNeedsDisplay()
             }

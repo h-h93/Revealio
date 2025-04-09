@@ -20,6 +20,7 @@ class FirebaseService {
     private var chatListenerTask: Task<Void, Never>?
     private var messageListenerTask: Task<Void, Never>?
     private var cache = NSCache<NSString, UIImage>()
+    private let cacheDirectoryName = "ImageCache"
 
     init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
 
@@ -310,20 +311,44 @@ class FirebaseService {
 
     func getImages(urlString: String) async -> UIImage? {
         let cacheKey = NSString(string: urlString)
-        if let image = cache.object(forKey: cacheKey) { return image }
+        guard let url = URL(string: urlString) else { return nil }
+        // Try memory cache first
+        if let image = cache.object(forKey: cacheKey) {
+            print("Memory cache hit")
+            return image
+        }
+
+        // Try disk cache next
+        if let image = loadImageFromDisk(withFilename: urlString) {
+            print("Disk cache hit")
+            // Store in memory cache for faster access next time
+            cache.setObject(image, forKey: cacheKey)
+            return image
+        }
+
+        // Download if not in any cache
         guard let url = URL(string: urlString) else { return nil }
         let config = URLSessionConfiguration.default
         config.waitsForConnectivity = true
         config.allowsCellularAccess = true
-        config.timeoutIntervalForRequest = 30 // 30 seconds
+        config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
         let session = URLSession(configuration: config)
+
         do {
+            print("Downloading image")
             let (data, _) = try await session.data(from: url)
             guard let image = UIImage(data: data) else { return nil }
-            self.cache.setObject(image, forKey: cacheKey)
+
+            // Cache in memory
+            cache.setObject(image, forKey: cacheKey)
+
+            // Cache to disk
+            saveImageToDisk(image, withFilename: urlString)
+
             return image
         } catch {
+            print("Download error: \(error)")
             return nil
         }
     }
@@ -360,5 +385,67 @@ class FirebaseService {
                 }
             }
         }
+    }
+}
+
+
+
+extension FirebaseService {
+    // Save image to disk
+    private func saveImageToDisk(_ image: UIImage, withFilename filename: String) {
+        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
+            print("Could not get image data")
+            return
+        }
+
+        let cacheDirectory = createCacheDirectoryIfNeeded()
+        let fileURL = cacheDirectory.appendingPathComponent(filename)
+
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            print("Successfully saved image to: \(fileURL.path)")
+        } catch {
+            print("Error saving to disk: \(error.localizedDescription)")
+        }
+    }
+
+
+    // Load image from disk
+    private func loadImageFromDisk(withFilename filename: String) -> UIImage? {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(filename)
+
+        do {
+            let data = try Data(contentsOf: fileURL)
+            return UIImage(data: data)
+        } catch {
+            print("Error loading from disk: \(error)")
+            return nil
+        }
+    }
+
+
+    // Create and get the cache directory
+    private func createCacheDirectoryIfNeeded() -> URL {
+        let fileManager = FileManager.default
+        let cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent(cacheDirectoryName)
+
+        // Create directory if it doesn't exist
+        if !fileManager.fileExists(atPath: cacheDirectory.path) {
+            do {
+                try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+                print("Created cache directory at \(cacheDirectory.path)")
+            } catch {
+                print("Error creating cache directory: \(error.localizedDescription)")
+            }
+        }
+
+        return cacheDirectory
+    }
+
+
+    // Get documents directory
+    private func getDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0]
     }
 }
