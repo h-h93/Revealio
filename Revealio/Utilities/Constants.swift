@@ -74,3 +74,8 @@ enum FirebaseCollections: String {
     case conversations = "Conversations"
     case messages = "messages"
 }
+
+
+enum StorageLocationPath: String {
+    case cacheDirectoryName = "ImageCache"
+}
