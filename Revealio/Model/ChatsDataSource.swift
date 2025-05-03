@@ -29,19 +29,9 @@ class ChatsDataSource: NSObject, UITableViewDataSource {
 
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: RVTableView.reuseID, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: RVTableView.reuseID, for: indexPath) as! ChatsTableViewCell
         let chat = chats[indexPath.row]
-        guard let lastMessageType = chat.metadata.lastMessage?.messageType else { return cell }
-        guard let lastMessage = chat.metadata.lastMessage?.message else { return cell }
-
-        switch lastMessageType {
-        case MessageType.text:
-            cell.textLabel?.text = lastMessage
-        case MessageType.video:
-            cell.textLabel?.text = "Video"
-        case MessageType.image, MessageType.gif, MessageType.drawing:
-            cell.textLabel?.text = "Image"
-        } 
+        cell.setText(conversation: chat)
         return cell
     }
 }

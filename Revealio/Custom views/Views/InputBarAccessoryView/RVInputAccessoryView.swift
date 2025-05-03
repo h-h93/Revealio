@@ -17,7 +17,6 @@ protocol RVInputAccessoryViewDelegate: AnyObject {
 final class RVInputAccessoryView: InputBarAccessoryView {
     private var media = false
     private var drawing = false
-    private var images = [Data]()
     weak var photoButtonDelegate: RVInputAccessoryViewDelegate?
 
     override init(frame: CGRect) {
@@ -173,8 +172,8 @@ final class RVInputAccessoryView: InputBarAccessoryView {
 }
 
 
-extension RVInputAccessoryView: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    
+extension RVInputAccessoryView: UINavigationControllerDelegate {
+
     // Helper function inserted by Swift 4.2 migrator.
     fileprivate func convertFromUIImagePickerControllerInfoKeyDictionary(_ input: [UIImagePickerController.InfoKey: Any]) -> [String: Any] {
         return Dictionary(uniqueKeysWithValues: input.map {key, value in (key.rawValue, value)})
@@ -183,18 +182,6 @@ extension RVInputAccessoryView: UIImagePickerControllerDelegate, UINavigationCon
     // Helper function inserted by Swift 4.2 migrator.
     fileprivate func convertFromUIImagePickerControllerInfoKey(_ input: UIImagePickerController.InfoKey) -> String {
         return input.rawValue
-    }
-
-
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        guard let image = info[.originalImage] as? [UIImage] else { return }
-
-        for i in image {
-            print("appending")
-            if let jpegData = i.jpegData(compressionQuality: 0.8) {
-                images.append(jpegData)
-            }
-        }
     }
 }
 

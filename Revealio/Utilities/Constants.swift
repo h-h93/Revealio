@@ -73,6 +73,7 @@ enum FirebaseCollections: String {
     case users  = "Users"
     case conversations = "Conversations"
     case messages = "messages"
+    case vibes = "Vibes"
 }
 
 

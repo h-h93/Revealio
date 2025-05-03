@@ -21,7 +21,7 @@ class MessageViewController: UICollectionViewController, UICollectionViewDelegat
     let layout = UICollectionViewFlowLayout()
     let db = Firestore.firestore()
     var customInputView: RVInputAccessoryView!
-    //let emptyStateView = MZEmptyStateView(message: "Nothing to see here... Yet.")
+    let emptyStateView = RVEmptyStateView(message: "Nothing to see here... Yet.")
 
     init(conversation: ConversationDocument, inputView: RVInputAccessoryView) {
         super.init(collectionViewLayout: self.layout)

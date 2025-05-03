@@ -14,7 +14,9 @@ enum PersistanceActionType {
 
 enum PersistenceManager {
     static let defaults = UserDefaults.standard
-    
+
+    static var cache = NSCache<NSString, UIImage>()
+
     static func save(_ value: Any, forKey key: String) { defaults.setValue(value, forKey: key) }
     
     static func remove(forKey key: String) { defaults.removeObject(forKey: key) }

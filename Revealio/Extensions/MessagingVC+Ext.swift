@@ -92,7 +92,6 @@ extension MessageViewController: InputBarAccessoryViewDelegate {
     func sendPictureMessage(images: [Data]) {
         guard let conversationId = conversation.id else { return }
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        sendingMessage = true
         let messageData = Message(senderId: currentUserId, content: nil, mediaUrl: "", type: MessageType.text, timestamp: Date.now)
         Task {
             do {

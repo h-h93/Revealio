@@ -40,7 +40,7 @@ class HomeVC: UIViewController, RVDataLoadingVC {
 //            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
 //        ])
         
-        scratchView = RVScratchView(frame: CGRect(x: 0, y: 0, width: view.frame.width - 20, height: 450), image: Image(systemName: "questionmark.circle"))
+        scratchView = RVScratchView(frame: CGRect(x: 0, y: 0, width: view.frame.width - 20, height: 450))
         scratchView.delegate = self
         var scratchViewContainerView = UIView()
         let hostController = UIHostingController(rootView: scratchView)
@@ -71,7 +71,7 @@ extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollec
     
     
     func didTapRandomiseButton() {
-        scratchView.selection += 1
+        //scratchView.selection += 1
     }
 }
 

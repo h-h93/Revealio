@@ -103,6 +103,4 @@ extension ChatsVC: ChatListVCProtocol {
         messagingVC.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(messagingVC, animated: true)
     }
-
-
 }

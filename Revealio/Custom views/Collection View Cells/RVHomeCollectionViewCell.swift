@@ -11,7 +11,7 @@ class RVHomeCollectionViewCell: UICollectionViewCell {
     static let identifier: String = "RVHomeCollectionViewCell"
     
     lazy var host: UIHostingController = {
-        return UIHostingController(rootView: RVScratchView(frame: frame,image: nil))
+        return UIHostingController(rootView: RVScratchView(frame: frame))
     }()
     
     override init(frame: CGRect) {

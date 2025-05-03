@@ -19,7 +19,7 @@ class FirebaseService {
     private let storage = Storage.storage().reference()
     private var chatListenerTask: Task<Void, Never>?
     private var messageListenerTask: Task<Void, Never>?
-    private var cache = NSCache<NSString, UIImage>()
+    private var lastVibesDoc: DocumentSnapshot?
 
     init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
 
@@ -142,7 +142,9 @@ class FirebaseService {
         }
 
         let collectionRef = db.collection(FirebaseCollections.conversations.rawValue)
-        let query = collectionRef.whereField("participants", arrayContains: auth.uid)
+        // For Firestore, when querying map fields, you use dot notation
+        // This query will find documents where the current user's ID exists as a key in the participants map
+        let query = collectionRef.whereField("participants.userID.\(auth.uid)", isGreaterThan: "")
 
         let listener = query.addSnapshotListener { snapshot, error in
             if let error = error {
@@ -197,8 +199,35 @@ class FirebaseService {
     }
 
 
+    func getVibes() async throws -> [Vibes] {
+        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
+
+        var query = db.collection(FirebaseCollections.vibes.rawValue).order(by: "timestamp", descending: true).limit(to: 10)
+        if let lastDoc = lastVibesDoc {
+            query = query.start(afterDocument: lastDoc)
+        }
+        let snapshot = try await query.getDocuments()
+        var vibes = [Vibes]()
+        for document in snapshot.documents {
+            do {
+                let vibe = try document.data(as: Vibes.self)
+                vibes.append(vibe)
+            } catch {
+                print("Error parsing document \(document.documentID): \(error)")
+                continue  // Skip this document if it fails to parse
+            }
+        }
+
+        if let last = snapshot.documents.last {
+            lastVibesDoc = last
+        }
+
+        return vibes
+    }
+
+
     func getMessages(documentID: String?, completion: @escaping ([MessageDoc]) -> Void) throws {
-        guard let auth = Auth.auth().currentUser else { throw RVError.notLoggedIn }
+        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
         guard let documentID = documentID else { throw RVError.noData }
 
         // Reference the nested collection directly
@@ -220,7 +249,6 @@ class FirebaseService {
             }
 
             let docs = documents.compactMap { document in
-                let messageDoc = try? document.data(as: MessageDoc.self)
                 return try? document.data(as: MessageDoc.self)
             }
 
@@ -312,7 +340,7 @@ class FirebaseService {
         let cacheKey = NSString(string: urlString)
 
         // Try memory cache first
-        if let image = cache.object(forKey: cacheKey) {
+        if let image = PersistenceManager.cache.object(forKey: cacheKey) {
             print("Memory cache hit")
             return image
         }
@@ -324,7 +352,7 @@ class FirebaseService {
         if let image = loadImageFromDisk(withFilename: filename) {
             print("Disk cache hit")
             // Store in memory cache for faster access next time
-            cache.setObject(image, forKey: cacheKey)
+            PersistenceManager.cache.setObject(image, forKey: cacheKey)
             return image
         }
 
@@ -343,7 +371,7 @@ class FirebaseService {
             guard let image = UIImage(data: data) else { return nil }
 
             // Cache in memory
-            cache.setObject(image, forKey: cacheKey)
+            PersistenceManager.cache.setObject(image, forKey: cacheKey)
 
             // Cache to disk
             saveImageToDisk(image, withFilename: filename)
@@ -387,89 +415,5 @@ class FirebaseService {
                 }
             }
         }
-    }
-}
-
-
-
-extension FirebaseService {
-    // Create a safe filename from URL string
-    private func createSafeFilename(from urlString: String) -> String {
-        // Get the last path component if possible
-        if let url = URL(string: urlString), let lastPathComponent = url.pathComponents.last {
-            // Clean up the last component in case it has query parameters
-            let cleanComponent = lastPathComponent.components(separatedBy: "?").first ?? lastPathComponent
-            // Create a unique string by combining the last path component with a hash of the full URL
-            let urlHash = String(urlString.hash)
-            return "image_\(cleanComponent)_\(urlHash).jpg"
-        }
-
-        // Fallback: Use URL hash only
-        return "image_\(urlString.hash).jpg"
-    }
-
-    // Save image to disk
-    private func saveImageToDisk(_ image: UIImage, withFilename filename: String) {
-        guard let data = image.jpegData(compressionQuality: 0.8) ?? image.pngData() else {
-            print("Could not get image data")
-            return
-        }
-
-        let fileManager = FileManager.default
-        guard let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            print("Could not access caches directory")
-            return
-        }
-
-        let cacheDirectory = cachesDirectory.appendingPathComponent(StorageLocationPath.cacheDirectoryName.rawValue)
-
-        // Create cache directory if it doesn't exist
-        if !fileManager.fileExists(atPath: cacheDirectory.path) {
-            do {
-                try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true, attributes: nil)
-                print("Created cache directory at: \(cacheDirectory.path)")
-            } catch {
-                print("Error creating cache directory: \(error.localizedDescription)")
-                return
-            }
-        }
-
-        let fileURL = cacheDirectory.appendingPathComponent(filename)
-
-        do {
-            try data.write(to: fileURL, options: .atomic)
-            print("Successfully saved image to: \(fileURL.path)")
-        } catch {
-            print("Error saving to disk: \(error.localizedDescription)")
-        }
-    }
-
-    // Load image from disk
-    private func loadImageFromDisk(withFilename filename: String) -> UIImage? {
-        let fileManager = FileManager.default
-        guard let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-
-        let cacheDirectory = cachesDirectory.appendingPathComponent(StorageLocationPath.cacheDirectoryName.rawValue)
-        let fileURL = cacheDirectory.appendingPathComponent(filename)
-
-        if !fileManager.fileExists(atPath: fileURL.path) {
-            return nil
-        }
-
-        do {
-            let data = try Data(contentsOf: fileURL)
-            return UIImage(data: data)
-        } catch {
-            print("Error loading from disk: \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    // Get documents directory
-    private func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0]
     }
 }

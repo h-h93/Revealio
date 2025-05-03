@@ -11,7 +11,7 @@ import FirebaseFirestore
 // get the conversation document
 struct ConversationDocument: Codable, Hashable {
     @DocumentID var id: String?
-    let participants: [String]
+    let participants: ParticipantsWrapper
     let metadata: ConversationMetadata
 }
 
@@ -22,6 +22,11 @@ struct ConversationMetadata: Codable, Hashable {
     let lastMessage: LastMessage?
     let type: String
     let updatedAt: Date
+}
+
+
+struct ParticipantsWrapper: Codable, Hashable {
+    let userID: [String: String]  // Map of userId to name
 }
 
 // read the last message of each document from metadata
@@ -64,11 +69,11 @@ struct DeliveryStatus: Codable, Hashable {
 }
 
 enum MessageType: String, Codable {
-    case text = "text"
-    case image = "image"
-    case gif = "gif"
-    case drawing = "drawing"
-    case video = "video"
+    case text
+    case image
+    case gif
+    case drawing
+    case video
 }
 
 // Models/MessageError.swift

@@ -45,20 +45,18 @@ class ChatListVC: UIViewController {
     
     
     func getUsers() {
-        Task {
-            datasource = ChatsDataSource()
-            await datasource.getChatList()
-            tableView.dataSource = datasource
-            tableView.reloadData()
-            datasource.reloadTableViewClosure = { [weak self] in
-                self?.tableView.reloadData()
-            }
+        datasource = ChatsDataSource()
+        datasource.getChatList()
+        tableView.dataSource = datasource
+        tableView.reloadData()
+        datasource.reloadTableViewClosure = { [weak self] in
+            self?.tableView.reloadData()
         }
     }
-    
+
     
     func configureTableView() {
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: RVTableView.reuseID)
+        tableView.register(ChatsTableViewCell.self, forCellReuseIdentifier: RVTableView.reuseID)
         tableView.separatorStyle = .singleLine
         tableView.delegate = self
         view.addSubview(tableView)
