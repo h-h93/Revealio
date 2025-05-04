@@ -1,9 +1,3 @@
-//
-//  RVMessageImageView.swift
-//  Revealio
-//
-//  Created by hanif hussain on 25/03/2025.
-//
 import UIKit
 
 class RVMessageImageView: UIImageView {

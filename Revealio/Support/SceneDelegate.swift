@@ -1,11 +1,5 @@
-//
-//  SceneDelegate.swift
-//  Revealio
-//
-//  Created by hanif hussain on 29/11/2024.
-//
-
 import UIKit
+import FirebaseAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -26,8 +20,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func configureScene(windowScene: UIWindowScene) {
         let window = UIWindow(windowScene: windowScene)
-        let tabViewController = RVTabBarController()
-        window.rootViewController = tabViewController
+        if let auth = Auth.auth().currentUser {
+            let tabViewController = RVTabBarController()
+            window.rootViewController = tabViewController
+        } else {
+            let loginVC = LoginVC()
+            window.rootViewController = UINavigationController(rootViewController: loginVC)
+        }
         window.makeKeyAndVisible()
         self.window = window
     }

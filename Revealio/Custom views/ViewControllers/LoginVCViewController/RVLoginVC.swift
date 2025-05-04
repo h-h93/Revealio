@@ -9,7 +9,9 @@ import UIKit
 import SwiftUI
 import FirebaseAuth
 
-protocol RVLoginViewDelegateProtocol: AnyObject {}
+protocol RVLoginViewDelegateProtocol: AnyObject {
+    func verificationComplete()
+}
 
 class RVLoginVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
     var alertVC: RVAlertVC!
@@ -146,6 +148,9 @@ class RVLoginVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
                 guard let verificationID else { return }
                 DispatchQueue.main.async {
                     self.verificationView = RVPhoneVerificationVC(verificationID: verificationID, phoneNumber: text)
+                    self.verificationView.verificationCompleteClosure = { [weak self] in
+                        self?.rvLoginDelegate?.verificationComplete()
+                    }
                     self.dismissLoadingView()
                     let navigationVC = UINavigationController(rootViewController: self.verificationView)
                     navigationVC.modalPresentationStyle = .pageSheet

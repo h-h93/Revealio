@@ -1,9 +1,3 @@
-//
-//  ChatsDataSource.swift
-//  Revealio
-//
-//  Created by hanif hussain on 27/01/2025.
-//
 import UIKit
 
 class ChatsDataSource: NSObject, UITableViewDataSource {

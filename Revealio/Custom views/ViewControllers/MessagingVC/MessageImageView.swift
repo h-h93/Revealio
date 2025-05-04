@@ -1,9 +1,3 @@
-//
-//  MessageImageView.swift
-//  Revealio
-//
-//  Created by hanif hussain on 02/04/2025.
-//
 import UIKit
 import Photos
 import MobileCoreServices

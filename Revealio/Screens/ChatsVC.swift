@@ -1,9 +1,3 @@
-//
-//  ContactsVC.swift
-//  Revealio
-//
-//  Created by hanif hussain on 18/12/2024.
-//
 import UIKit
 import Contacts
 // work here to get conversation documents and show them here

@@ -5,6 +5,7 @@
 //  Created by hanif hussain on 01/12/2024.
 //
 import UIKit
+import FirebaseAuth
 
 class RVTabBarController: UITabBarController, UITabBarControllerDelegate {
     
@@ -21,7 +22,7 @@ class RVTabBarController: UITabBarController, UITabBarControllerDelegate {
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().tintColor = .secondaryLabel
-        viewControllers = [createHomeVCTab(), createChatsVCTab(), createLoginVCTab()]
+        viewControllers = [createHomeVCTab(), createChatsVCTab(), createSettingsVCTab()]
     }
     
     
@@ -45,5 +46,13 @@ class RVTabBarController: UITabBarController, UITabBarControllerDelegate {
         let loginVC = LoginVC()
         loginVC.tabBarItem = UITabBarItem(title: "Login", image: Images.homeTabImage, tag: 2)
         return UINavigationController(rootViewController: loginVC)
+    }
+
+
+    private func createSettingsVCTab() -> UINavigationController {
+        let settingVC = SettingsVC()
+        settingVC.title = "Settings"
+        settingVC.tabBarItem = UITabBarItem(title: "Settings", image: Images.settingsTabImage, tag: 2)
+        return UINavigationController(rootViewController: settingVC)
     }
 }

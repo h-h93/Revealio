@@ -1,9 +1,3 @@
-//
-//  MessageViewController.swift
-//  Revealio
-//
-//  Created by hanif hussain on 16/03/2025.
-//
 import UIKit
 import PhotosUI
 import Firebase

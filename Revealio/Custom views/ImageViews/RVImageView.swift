@@ -1,9 +1,3 @@
-//
-//  RVImageView.swift
-//  Revealio
-//
-//  Created by hanif hussain on 19/12/2024.
-//
 import UIKit
 
 class RVImageView: UIImageView {

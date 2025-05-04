@@ -1,9 +1,3 @@
-//
-//  Messages.swift
-//  Revealio
-//
-//  Created by hanif hussain on 31/12/2024.
-//
 import UIKit
 import FirebaseCore
 import FirebaseFirestore

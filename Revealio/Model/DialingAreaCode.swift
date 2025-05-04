@@ -1,9 +1,3 @@
-//
-//  DialingAreaCode.swift
-//  Revealio
-//
-//  Created by hanif hussain on 05/01/2025.
-//
 import Foundation
 
 struct DialingAreaCode: Codable, Identifiable {

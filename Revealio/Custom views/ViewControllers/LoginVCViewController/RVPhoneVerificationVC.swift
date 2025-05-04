@@ -14,7 +14,8 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
     private var verificationCodeTextField = RVTextField()
     private var verificationID: String?
     private var phoneNumber: String!
-    
+    var verificationCompleteClosure: (() -> Void)?
+
     private var cancellablesSubscription = Set<AnyCancellable>()
     @Published private var verificationText: String?
     
@@ -89,6 +90,8 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
                             } else {
                                 // log user in and update tabbar controller
                                 print("existing user")
+                                self.verificationCompleteClosure?()
+                                self.dismiss(animated: true)
                             }
                         }
                     case .failure(let error):

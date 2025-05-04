@@ -1,9 +1,3 @@
-//
-//  MessagingVC.swift
-//  Revealio
-//
-//  Created by hanif hussain on 30/12/2024.
-//
 import UIKit
 import InputBarAccessoryView
 import Firebase

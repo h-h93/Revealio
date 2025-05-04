@@ -1,10 +1,3 @@
-//
-//  RVAnimationMessageBubbleView.swift
-//  Revealio
-//
-//  Created by hanif hussain on 22/03/2025.
-//
-
 import UIKit
 
 class RVAnimationMessageBubbleView: UIView {

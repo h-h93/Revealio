@@ -1,9 +1,3 @@
-//
-//  ChatMessage.swift
-//  Revealio
-//
-//  Created by hanif hussain on 07/02/2025.
-//
 import Foundation
 
 struct MessageSectionHeader: Hashable {

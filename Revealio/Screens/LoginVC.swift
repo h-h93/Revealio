@@ -1,10 +1,3 @@
-//
-//  LoginVC.swift
-//  Revealio
-//
-//  Created by hanif hussain on 01/12/2024.
-//
-
 import UIKit
 
 class LoginVC: UIViewController, RVDataLoadingVC, RVLoginViewDelegateProtocol {
@@ -25,5 +18,13 @@ class LoginVC: UIViewController, RVDataLoadingVC, RVLoginViewDelegateProtocol {
         view.addSubview(loginView.view)
         loginView.view.pinToSafeAreaEdges(of: view)
         loginView.didMove(toParent: self)
+    }
+
+
+    func verificationComplete() {
+        let tabbarController = RVTabBarController()
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene = scenes.first as? UIWindowScene
+        windowScene?.windows.first?.rootViewController = tabbarController
     }
 }

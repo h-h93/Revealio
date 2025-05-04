@@ -1,9 +1,3 @@
-//
-//  RVEmptyStateView.swift
-//  Revealio
-//
-//  Created by hanif hussain on 02/05/2025.
-//
 import UIKit
 import Lottie
 

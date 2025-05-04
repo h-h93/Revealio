@@ -105,6 +105,17 @@ class FirebaseService {
     }
 
 
+    func getDocument<T: Decodable>(collectionName: String, filterBy: String, fieldName: String) async throws -> T? {
+        var documents: T?
+        let collectionRef = db.collection(collectionName).whereField(filterBy, isEqualTo: fieldName)
+        let snapshot = try await collectionRef.getDocuments()
+        for document in snapshot.documents {
+            documents = try document.data(as: T.self)
+        }
+        return documents
+    }
+
+
     func checkDocumentExists(collectionName: String, fieldName: String?, exists: @escaping (Bool) -> Void) {
         guard let fieldName = fieldName else {
             exists(false)
@@ -409,6 +420,11 @@ class FirebaseService {
                         if let document = snapshot {
                             if document.exists {
                                 docRef.updateData(["photoURL": downloadURL.absoluteString])
+                                let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
+                                changeRequest?.photoURL = downloadURL
+                                changeRequest?.commitChanges { error in
+                                    // ...
+                                }
                             }
                         }
                     }

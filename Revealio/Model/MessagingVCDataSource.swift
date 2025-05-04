@@ -1,9 +1,3 @@
-//
-//  MessagingVCDataSource.swift
-//  Revealio
-//
-//  Created by hanif hussain on 13/02/2025.
-//
 //import UIKit
 //
 //class MessagingVCDataSource: NSObject, UICollectionViewDataSource {

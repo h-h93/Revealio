@@ -59,6 +59,7 @@ enum Images {
     static let homeTabImage = UIImage(systemName: "house")
     static let chatTabImage = UIImage(systemName: "message")
     static let contactsTabImage = UIImage(systemName: "person.3")
+    static let settingsTabImage = UIImage(systemName: "gear")
     static let defaultProfileImage = UIImage(systemName: "person.circle")
 }
 
