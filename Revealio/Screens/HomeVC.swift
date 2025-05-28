@@ -1,6 +1,6 @@
 import UIKit
 import SwiftUI
-
+import FirebaseAuth
 class HomeVC: UIViewController, RVDataLoadingVC {
     var loadingAnimationContainerView: UIView!
     private var collectionView: RVCollectionView!
@@ -15,24 +15,12 @@ class HomeVC: UIViewController, RVDataLoadingVC {
 
     private func configure() {
         view.backgroundColor = .systemBackground
-        title = "Latest"
+        title = "Vibes"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "plus"), style: .plain, target: self, action: #selector(handleAddButton))
     }
     
     
     private func configureScratchView() {
-//        let cellFrame = CGRect(x: 0, y: 0, width: view.frame.width - 50, height: 250)
-//        collectionView = RVCollectionView(frame: .zero, collectionViewLayout: AppLayout.singlePageLayout(cellFrame: cellFrame, in: view))
-//        collectionView.register(RVHomeCollectionViewCell.self, forCellWithReuseIdentifier: RVHomeCollectionViewCell.identifier)
-//        collectionView.delegate = self
-//        collectionView.dataSource = self
-//        view.addSubview(collectionView)
-//        NSLayoutConstraint.activate([
-//            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 200),
-//            collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-//            collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-//            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-//        ])
-        
         scratchView = RVScratchView(frame: CGRect(x: 0, y: 0, width: view.frame.width - 20, height: 450))
         scratchView.delegate = self
         var scratchViewContainerView = UIView()
@@ -48,23 +36,16 @@ class HomeVC: UIViewController, RVDataLoadingVC {
         
         
     }
+
+
+    @objc private func handleAddButton() {
+
+    }
 }
 
-extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RVScratchViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 10
-    }
-    
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RVHomeCollectionViewCell.identifier, for: indexPath) as! RVHomeCollectionViewCell
-        cell.set(image: Image(systemName: "heart"))
-        return cell
-    }
-    
-    
+extension HomeVC: RVScratchViewDelegate {
     func didTapRandomiseButton() {
-        //scratchView.selection += 1
+        print("HERE I AM IN HOME")
     }
 }
 

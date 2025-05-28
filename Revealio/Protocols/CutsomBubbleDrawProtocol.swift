@@ -1,9 +1,3 @@
-//
-//  CutsomBubbleDrawProtocol.swift
-//  Revealio
-//
-//  Created by hanif hussain on 26/03/2025.
-//
 import UIKit
 
 enum ArrowDirection: String { // 1

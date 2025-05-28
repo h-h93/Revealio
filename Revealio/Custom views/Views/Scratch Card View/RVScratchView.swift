@@ -31,7 +31,6 @@ class RVScratchViewModel: ObservableObject {
             let newVibes = try await FirebaseService.shared.getVibes()
 
             self.vibes = newVibes
-            self.isEmpty = newVibes.isEmpty
 
             // If we have vibes, download images in parallel
             if !newVibes.isEmpty {
@@ -45,16 +44,24 @@ class RVScratchViewModel: ObservableObject {
                         }
                     }
 
-                    downloadedImages = Array(repeating: Image(systemName: "photo"), count: newVibes.count)
+                    // Collect results - we need a better way to organize since we removed the placeholder array
+                    var results = [(Int, UIImage)]()
 
                     for await (index, uiImage) in group {
                         if let uiImage = uiImage {
-                            downloadedImages[index] = Image(uiImage: uiImage)
+                            results.append((index, uiImage))
                         }
                     }
+
+                    // Sort by index to maintain order
+                    results.sort { $0.0 < $1.0 }
+
+                    // Then convert to images
+                    downloadedImages = results.map { Image(uiImage: $1) }
                 }
 
                 self.images = downloadedImages
+                self.isEmpty = self.images.isEmpty
             }
         } catch {
             print("Error loading vibes: \(error)")
@@ -76,7 +83,7 @@ struct RVScratchView: View {
     private var scratchFrame: CGRect
     private let gridSize = 5
     private let gridCellSize = 40
-    private let scratchClearAmount: CGFloat = 0.75
+    private let scratchClearAmount: CGFloat = 0.70
     @StateObject private var motionManager = MotionManager()
     @State private var borderColor = Color.clear
     @State private var hiddenViewColor = Color.clear
@@ -114,19 +121,19 @@ struct RVScratchView: View {
                 .fill(hiddenViewColor)
                 .frame(width: scratchFrame.width, height: scratchFrame.height)
                 .overlay {
-                    if viewModel.isEmpty || viewModel.images.isEmpty {
-                        LottieView(animation: .named("NoVibesAnimation"))
-                            .playing(loopMode: .loop)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: scratchFrame.width - 50)
-                    } else {
+                    if !viewModel.isEmpty && !viewModel.images.isEmpty {
                         let safeIndex = min(selection, max(0, viewModel.images.count - 1))
                         viewModel.images[safeIndex]
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: scratchFrame.width, height: scratchFrame.height)
                             .clipShape(RoundedRectangle(cornerRadius: 20))
+                    } else {
+                        // Use Color.white with zero opacity instead of Color.clear
+                        Color.primary.opacity(0.60)
+                            .frame(width: scratchFrame.width, height: scratchFrame.height)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+
                     }
                 }
                 .mask(
@@ -217,11 +224,19 @@ struct RVScratchView: View {
                 .frame(width: scratchFrame.width, height: scratchFrame.height)
                 .overlay {
                     if viewModel.isEmpty || viewModel.images.isEmpty {
-                        LottieView(animation: .named("NoVibesAnimation"))
-                            .playing(loopMode: .loop)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: scratchFrame.width - 50)
+                        VStack {
+                            LottieView(animation: .named("noVibesImageAnimation"))
+                                .playing(loopMode: .loop)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: scratchFrame.width - 50)
+                            Text("Nothing to see here...😢")
+                                .font(.title).fontWeight(.bold)
+                                .foregroundStyle(.foreground)
+                            Text("Send someone a vibe!")
+                                .font(.headline).fontWeight(.heavy)
+                                .foregroundStyle(.foreground)
+                        }
                     } else {
                         let safeIndex = min(selection, max(0, viewModel.images.count - 1))
                         viewModel.images[safeIndex]

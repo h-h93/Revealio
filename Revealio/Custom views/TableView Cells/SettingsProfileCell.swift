@@ -39,7 +39,7 @@ class SettingsProfileCell: UITableViewCell {
     }
 
 
-    func set() {
+    func setImage() {
         guard let auth = Auth.auth().currentUser else { return }
         usernameLabel.text = auth.displayName
         profileImageView.setImage()

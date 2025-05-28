@@ -11,7 +11,7 @@ import PhotosUI
 
 protocol RVInputAccessoryViewDelegate: AnyObject {
     func didTapPhotoButton(pickerController: PHPickerViewController)
-    func finishedSelectingImage(images: [Data])
+    func didTapDrawingButton()
 }
 
 final class RVInputAccessoryView: InputBarAccessoryView {
@@ -27,9 +27,7 @@ final class RVInputAccessoryView: InputBarAccessoryView {
     }
 
 
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
 
     private func configure() {
@@ -38,17 +36,7 @@ final class RVInputAccessoryView: InputBarAccessoryView {
         // basic code taken from Nathan Tannar input accessory view example made small changes to placement and sizing of buttons/ images
         inputTextView.textContainerInset = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 36)
         inputTextView.placeholderLabelInsets = UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 36)
-        if #available(iOS 13, *) {
-            inputTextView.layer.borderColor = UIColor.systemGray2.cgColor
-        } else {
-            inputTextView.layer.borderColor = UIColor.lightGray.cgColor
-        }
-
-        if #available(iOS 13, *) {
-            self.backgroundColor = UIColor.systemBackground
-        } else {
-            self.backgroundColor = .white
-        }
+        inputTextView.layer.borderColor = UIColor.systemBackground.cgColor
 
         setStackViewItems(items, forStack: .top, animated: false)
 
@@ -67,7 +55,7 @@ final class RVInputAccessoryView: InputBarAccessoryView {
     private func configureTopStackView() {
         self.topStackView.axis = .horizontal
         let drawButton = makeButton(named: "paintbrush.pointed").onSelected { _ in
-            print("open drawing view")
+            self.photoButtonDelegate?.didTapDrawingButton()
             self.drawing = true
         }
         var configuration = PHPickerConfiguration()
@@ -130,27 +118,48 @@ final class RVInputAccessoryView: InputBarAccessoryView {
         messageBubbleView.frame = CGRect(x: frameOriginX, y: frameOriginY, width: 200, height: 35)
         messageBubbleView.arrowDirection = .right
 
-        // Position label at (0,0) within the bubble (not using bubble's origin coordinates)
+        // Position label at (0,0) within the bubble
         let label = RVMessageAnimationLabel(text: messageText)
-        label.frame = CGRect(x: 0, y: 0, width: 200, height: 33) // Inset within bubble
+        label.frame = CGRect(x: 0, y: 0, width: 200, height: 33)
         label.backgroundColor = .systemBlue.withAlphaComponent(0.8)
 
         messageBubbleView.addSubview(label)
         addSubview(messageBubbleView)
 
-        // Animation code remains the same
-        UIView.animate(withDuration: 0.7, delay: 0, usingSpringWithDamping: 0.3, initialSpringVelocity: 0.5, options: .curveLinear, animations: {
-            messageBubbleView.transform = CGAffineTransform(translationX: UIScreen.main.bounds.width - messageBubbleView.frame.width - 20, y: messageBubbleView.bounds.origin.y)
+        // First animation: Move horizontally with gentler spring effect
+        UIView.animate(withDuration: 0.5, // Shorter duration
+                       delay: 0,
+                       usingSpringWithDamping: 0.7, // Higher damping = less bounce
+                       initialSpringVelocity: 0.3,
+                       options: .curveEaseInOut, // Smoother curve
+                       animations: {
+            // Move horizontally to the right side
+            messageBubbleView.transform = CGAffineTransform(
+                translationX: UIScreen.main.bounds.width - messageBubbleView.frame.width - 20,
+                y: messageBubbleView.bounds.origin.y
+            )
         }, completion: { _ in
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1, options: .curveLinear, animations: {
-                messageBubbleView.transform = CGAffineTransform(translationX: self.safeAreaLayoutGuide.layoutFrame.width - messageBubbleView.frame.width, y: -83)
-            }) { _ in
-                label.alpha = 0
-                messageBubbleView.alpha = 0
-                completedAnimation(true)
-                label.removeFromSuperview()
+            // Second animation: Move upward with fade effect
+            UIView.animate(withDuration: 0.4, // Slightly longer for smoother feel
+                           delay: 0.1, // Small delay for better visual flow
+                           options: .curveEaseOut, // Smooth deceleration
+                           animations: {
+                // Move upward
+                messageBubbleView.transform = CGAffineTransform(
+                    translationX: self.safeAreaLayoutGuide.layoutFrame.width - messageBubbleView.frame.width,
+                    y: -83
+                )
+
+                // Start fading out halfway through the animation
+                UIView.animate(withDuration: 0.25, delay: 0.2, options: .curveLinear, animations: {
+                    messageBubbleView.alpha = 0
+                    label.alpha = 0
+                })
+            }, completion: { _ in
+                // Cleanup and completion
                 messageBubbleView.removeFromSuperview()
-            }
+                completedAnimation(true)
+            })
         })
     }
 

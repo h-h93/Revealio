@@ -7,11 +7,6 @@
 import UIKit
 import SafariServices
 
-protocol UIViewControllerProtocol: UIViewController {
-    var alertVC: RVAlertVC! { get set }
-    func presentSafariVC(with urlString: String)
-}
-
 extension UIViewControllerProtocol {
     func presentRVAlert(title: String, message: String, buttonTitle: String) {
         alertVC = RVAlertVC(title: title, message: message, buttonTitle: buttonTitle)

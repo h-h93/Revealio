@@ -1,20 +1,15 @@
-//
-//  FirebaseService.swift
-//  Revealio
-//
-//  Created by hanif hussain on 31/12/2024.
-//
 import UIKit
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
 import FirebaseStorage
 import AVFoundation
-import Combine
 
-// Enhanced FirebaseService
-class FirebaseService {
+class FirebaseService: FirebaseServiceProtocol {
+    // Singleton instance
     static let shared = FirebaseService()
+
+    // Private properties
     private let db = Firestore.firestore()
     private let storage = Storage.storage().reference()
     private var chatListenerTask: Task<Void, Never>?
@@ -23,32 +18,29 @@ class FirebaseService {
 
     init() { Auth.auth().languageCode = Locale.current.language.languageCode?.identifier ?? "en" }
 
-
-    func sendVerificationCode(phoneNumber: String, completion: @escaping (Result<String?, RVError>) -> (Void)) {
-        PhoneAuthProvider.provider()
-            .verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
-                if let error = error {
-                    let err = error as NSError
-                    switch err.code {
-                    case AuthErrorCode.invalidPhoneNumber.rawValue:
-                        completion(.failure(RVError.invalidPhoneNumber))
-                    case AuthErrorCode.captchaCheckFailed.rawValue:
-                        completion(.failure(RVError.captchaCheckFailed))
-                    default:
-                        completion(.failure(RVError.invalidResponseFromServer))
-                    }
-                    return
-                } else {
-                    PersistenceManager.defaults.set(verificationID, forKey: "authVerificationID")
-                    completion(.success(verificationID))
-                }
-            }
+    // MARK: - Cleanup
+    deinit {
+        cancelChatListener()
+        cancelMessageLisener()
     }
 
 
-    func createAccount(verificationID: String, verificationCode: String, completion: @escaping (Result<Void, RVError>) -> (Void)) {
-        // Sign in using the verificationID and the code sent to the user
-        // ...
+    func sendVerificationCode(phoneNumber: String, completion: @escaping (Result<String?, RVError>) -> Void) {
+        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
+            if let error = error as NSError? {
+                let errorType: RVError = error.code == AuthErrorCode.invalidPhoneNumber.rawValue ? .invalidPhoneNumber :
+                error.code == AuthErrorCode.captchaCheckFailed.rawValue ? .captchaCheckFailed :
+                    .invalidResponseFromServer
+                completion(.failure(errorType))
+            } else {
+                PersistenceManager.defaults.set(verificationID, forKey: "authVerificationID")
+                completion(.success(verificationID))
+            }
+        }
+    }
+
+
+    func createAccount(verificationID: String, verificationCode: String, completion: @escaping (Result<Void, RVError>) -> Void) {
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: verificationID,
             verificationCode: verificationCode
@@ -72,47 +64,86 @@ class FirebaseService {
     }
 
 
-    // MARK: create new user data entry in the DB
     func createInitialUserEntry(user: User) {
         guard let auth = Auth.auth().currentUser else { return }
         let docRef = db.collection("Users").document(auth.uid)
-        var dataForNewUser = [
-            "displayName": user.displayName,
-            "photoURL": user.photoURL ?? "",
-            "createdAt": user.createdAt,
-            "lastSeen": user.lastSeen,
-            "phoneNumber": user.phoneNumber,
-        ] as [String: Any]
-        let profilePic = UIImage(contentsOfFile: user.photoURL ?? "")
 
-        docRef.getDocument { (snapshot, error) in
-            if let document = snapshot {
-                if !document.exists {
-                    docRef.setData(dataForNewUser)
-                    if profilePic == Images.defaultProfileImage {
-                        dataForNewUser.updateValue("", forKey: "photoURL")
-                    } else {
-                        guard let profilePic = profilePic else { return }
-                        self.uploadProfilePic(image: profilePic.jpegData(compressionQuality: 1)!)
-                    }
-                }
-            }
+        docRef.getDocument { [weak self] (snapshot, error) in
+            guard let self = self, let document = snapshot, !document.exists else { return }
 
-            if let err = error {
-                print(err.localizedDescription)
+            var userData = [
+                "displayName": user.displayName,
+                "photoURL": user.photoURL ?? "",
+                "createdAt": user.createdAt,
+                "lastSeen": user.lastSeen,
+                "phoneNumber": user.phoneNumber,
+            ] as [String: Any]
+
+            // Create document
+            docRef.setData(userData)
+
+            // Update Auth profile
+            let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
+            changeRequest?.displayName = user.displayName
+            changeRequest?.commitChanges(completion: nil)
+
+            // Handle profile pic if needed
+            if let profilePath = user.photoURL, let profilePic = UIImage(contentsOfFile: profilePath),
+               profilePic != Images.defaultProfileImage {
+                self.uploadProfilePic(image: profilePic.jpegData(compressionQuality: 1)!)
             }
         }
     }
 
 
-    func getDocument<T: Decodable>(collectionName: String, filterBy: String, fieldName: String) async throws -> T? {
-        var documents: T?
-        let collectionRef = db.collection(collectionName).whereField(filterBy, isEqualTo: fieldName)
-        let snapshot = try await collectionRef.getDocuments()
-        for document in snapshot.documents {
-            documents = try document.data(as: T.self)
+    func uploadProfilePic(image: Data?) {
+        guard let imageData = image,
+                let auth = Auth.auth().currentUser else { return }
+
+        let userID = auth.uid
+        let path = "Users_pictures/\(userID)/images/profilePicture/profilePic.jpg"
+        let fileRef = storage.child(path)
+        let docRef = db.collection("Users").document(userID)
+
+        fileRef.putData(imageData, metadata: nil) { [weak self] _, error in
+            if let error = error {
+                print("Profile upload error: \(error.localizedDescription)")
+                return
+            }
+
+            fileRef.downloadURL { url, _ in
+                guard let downloadURL = url?.absoluteString else { return }
+
+                docRef.getDocument { document, _ in
+                    if document?.exists == true {
+                        // Update Firestore and Auth profile
+                        docRef.updateData(["photoURL": downloadURL])
+
+                        let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
+                        changeRequest?.photoURL = url
+                        changeRequest?.commitChanges(completion: nil)
+                    }
+                }
+            }
         }
-        return documents
+    }
+
+
+    // MARK: - DatabaseService Implementation
+    func getDocumentId(collection: String, filterBy: String, fieldName: String) async throws -> String? {
+        let usersCollection = db.collection(collection)
+
+        let snapshot = try await usersCollection.whereField(filterBy, isEqualTo: fieldName).getDocuments()
+
+        return snapshot.documents.first?.documentID
+    }
+
+
+    func getDocument<T: Decodable>(collectionName: String, filterBy: String, fieldName: String) async throws -> T? {
+        let snapshot = try await db.collection(collectionName)
+            .whereField(filterBy, isEqualTo: fieldName)
+            .getDocuments()
+        return snapshot.documents.first.flatMap { try? $0.data(as: T.self) }
     }
 
 
@@ -121,16 +152,8 @@ class FirebaseService {
             exists(false)
             return
         }
-        let collectionRef = db.collection(collectionName).document(fieldName)
-        collectionRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                let data = document.data()
-                // Check if the field exists in data
-                exists(true)
-            } else {
-                print("Document does not exist")
-                exists(false)
-            }
+        db.collection(collectionName).document(fieldName).getDocument { document, _ in
+            exists(document?.exists ?? false)
         }
     }
 
@@ -190,10 +213,41 @@ class FirebaseService {
     }
 
 
-    // Method to cancel the current listener
     func cancelChatListener() {
         chatListenerTask?.cancel()
         chatListenerTask = nil
+    }
+
+
+    // MARK: - MessageService Implementation
+    func getMessages(documentID: String?, completion: @escaping ([MessageDoc]) -> Void) throws {
+        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
+        guard let documentID = documentID else { throw RVError.noData }
+
+        let messagesRef = db.collection(FirebaseCollections.conversations.rawValue)
+            .document(documentID)
+            .collection(FirebaseCollections.messages.rawValue)
+            .order(by: "message.timestamp", descending: false)
+
+        let listener = messagesRef.addSnapshotListener { snapshot, error in
+            guard error == nil, let documents = snapshot?.documents else {
+                print("Error fetching messages: \(error?.localizedDescription ?? "Unknown error")")
+                completion([])
+                return
+            }
+
+            let messages = documents.compactMap { try? $0.data(as: MessageDoc.self) }
+            completion(messages)
+        }
+
+        // Store listener
+        messageListenerTask = Task {
+            await withTaskCancellationHandler {
+                try? await Task.sleep(for: .seconds(3600))
+            } onCancel: {
+                listener.remove()
+            }
+        }
     }
 
 
@@ -203,108 +257,37 @@ class FirebaseService {
     }
 
 
-    // Don't forget to cancel when appropriate (e.g., deinit)
-    deinit {
-        cancelChatListener()
-        cancelMessageLisener()
-    }
-
-
-    func getVibes() async throws -> [Vibes] {
-        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
-
-        var query = db.collection(FirebaseCollections.vibes.rawValue).order(by: "timestamp", descending: true).limit(to: 10)
-        if let lastDoc = lastVibesDoc {
-            query = query.start(afterDocument: lastDoc)
-        }
-        let snapshot = try await query.getDocuments()
-        var vibes = [Vibes]()
-        for document in snapshot.documents {
-            do {
-                let vibe = try document.data(as: Vibes.self)
-                vibes.append(vibe)
-            } catch {
-                print("Error parsing document \(document.documentID): \(error)")
-                continue  // Skip this document if it fails to parse
-            }
-        }
-
-        if let last = snapshot.documents.last {
-            lastVibesDoc = last
-        }
-
-        return vibes
-    }
-
-
-    func getMessages(documentID: String?, completion: @escaping ([MessageDoc]) -> Void) throws {
-        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
-        guard let documentID = documentID else { throw RVError.noData }
-
-        // Reference the nested collection directly
-        let messagesRef = db.collection(FirebaseCollections.conversations.rawValue)
+    func createConversation(documentID: String, conversation: ConversationDocument, withUserID: String) async throws {
+        guard Auth.auth().currentUser != nil else { return }
+        print(documentID)
+        try db.collection(FirebaseCollections.conversations.rawValue)
             .document(documentID)
-            .collection(FirebaseCollections.messages.rawValue)
-            .order(by: "message.timestamp", descending: false)
-        let listener = messagesRef.addSnapshotListener { snapshot, error in
-            if let error = error {
-                print("Error fetching conversations: \(error.localizedDescription)")
-                completion([])
-                return
-            }
-
-            guard let documents = snapshot?.documents else {
-                print("No conversations found")
-                completion([])
-                return
-            }
-
-            let docs = documents.compactMap { document in
-                return try? document.data(as: MessageDoc.self)
-            }
-
-            // Call the completion handler with the results
-            completion(docs)
-        }
-
-        // Store the listener so it can be cancelled later
-        messageListenerTask = Task {
-            // Keep the listener alive until the task is cancelled
-            await withTaskCancellationHandler {
-                try? await Task.sleep(for: .seconds(3600)) // Keep alive for an hour
-            } onCancel: {
-                listener.remove()
-            }
-        }
-
-//        let snapshot = try await messagesRef.getDocuments()
-//        for document in snapshot.documents {
-//            //print("\(document.documentID) => \(document.data())")
-//            messages.append(try document.data(as: MessageDoc.self))
-//        }
+            .setData(from: conversation)
     }
 
 
     func sendMessage(toConversationID: String, message: Message) async throws {
         guard Auth.auth().currentUser != nil else { return }
+
+        let conversationRef = db.collection(FirebaseCollections.conversations.rawValue)
+            .document(toConversationID)
+
         do {
+            // Add message to messages subcollection
             let messageDoc = MessageDoc(message: message)
-            let encodedData = try Firestore.Encoder().encode(messageDoc)
-            try await db.collection(FirebaseCollections.conversations.rawValue)
-                .document(toConversationID)
-                .collection(FirebaseCollections.messages.rawValue)
-                .addDocument(data: encodedData)
-            try await db.collection(FirebaseCollections.conversations.rawValue)
-                .document(toConversationID)
-                .updateData([
-                    "metadata.lastMessage.message": message.content,
-                    "metadata.lastMessage.messageType": message.type.rawValue,
-                    "metadata.lastMessage.participant": message.senderId,
-                    "metadata.lastMessage.timestamp": message.timestamp,
-                    "metadata.updatedAt": FieldValue.serverTimestamp()
-                ])
+            try await conversationRef.collection(FirebaseCollections.messages.rawValue)
+                .addDocument(data: try Firestore.Encoder().encode(messageDoc))
+
+            // Update conversation metadata
+            try await conversationRef.updateData([
+                "metadata.lastMessage.message": message.content,
+                "metadata.lastMessage.messageType": message.type.rawValue,
+                "metadata.lastMessage.participant": message.senderId,
+                "metadata.lastMessage.timestamp": message.timestamp,
+                "metadata.updatedAt": FieldValue.serverTimestamp()
+            ])
         } catch {
-            print("error sending message: \(error.localizedDescription)")
+            print("Error sending message: \(error.localizedDescription)")
             throw RVError.unableToCompleteRequest
         }
     }
@@ -312,37 +295,71 @@ class FirebaseService {
 
     func sendPictureMessage(toConversationID: String, imageData: [Data], message: Message) async throws {
         guard Auth.auth().currentUser != nil else { return }
-        do {
-            for (index, item) in imageData.enumerated() {
-                let data: Data = item
+
+        for data in imageData {
+            do {
+                // Set up metadata
                 let metadata = StorageMetadata()
-                metadata.contentType = "image/jpeg"
-                let id = UUID().uuidString
-                let mediaStoragePath = "\(toConversationID)/media/\(toConversationID)-\(id).jpg"
-                let ref = storage.child(mediaStoragePath)
-                var uploadIsPaused = false
-                var uploadIsCancelled = false
-                var uploadFinished = false
-                let uploadTask = try await ref.putDataAsync(data, metadata: metadata) { progress in
-                    guard let progress = progress else { return }
-                    if progress.isPaused {
-                        uploadIsPaused = true
-                    } else if progress.isCancelled {
-                        uploadIsCancelled = true
-                    } else if progress.isFinished {
-                        uploadFinished = true
-                        return
-                    }
+                metadata.contentType = MessageType.image.rawValue
+                let fileExtension = data.fileExtension
+                var type = MessageType.gif
+                switch fileExtension.lowercased() {
+                case "gif":
+                    type = .gif
+                case "jpg", "jpeg", "png", "webp":
+                    type = .image
+                case "mp4", "mov", "avi", "m4v":
+                    type = .video
+                default:
+                    break
                 }
 
-                if uploadFinished {
-                    let mediaURL = try await ref.downloadURL().absoluteString
-                    let imageMessage = Message(senderId: message.senderId, content: nil, mediaUrl: mediaURL, type: .image, timestamp: message.timestamp)
-                    try await sendMessage(toConversationID: toConversationID, message: imageMessage)
-                }
+                print("The type is \(fileExtension)")
+                // Create unique path
+                let id = UUID().uuidString
+                let mediaStoragePath = "\(toConversationID)/media/\(toConversationID)-\(id).\(fileExtension.lowercased())"
+                let ref = storage.child(mediaStoragePath)
+
+                // Upload and wait for completion
+                _ = try await ref.putDataAsync(data, metadata: metadata)
+
+                // Get download URL and send message
+                let mediaURL = try await ref.downloadURL().absoluteString
+                let imageMessage = Message(
+                    senderId: message.senderId,
+                    content: nil,
+                    mediaUrl: mediaURL,
+                    type: type,
+                    timestamp: message.timestamp
+                )
+
+                try await sendMessage(toConversationID: toConversationID, message: imageMessage)
+            } catch {
+                print("Error uploading image: \(error.localizedDescription)")
+                // Consider whether to throw or continue with next image
             }
-        } catch {
-            print(error.localizedDescription)
+        }
+    }
+
+
+    // MARK: - MediaService Implementation
+    func getVibes() async throws -> [Vibes] {
+        guard Auth.auth().currentUser != nil else { throw RVError.notLoggedIn }
+
+        // Build query
+        let query = db.collection(FirebaseCollections.vibes.rawValue)
+            .order(by: "timestamp", descending: true)
+            .limit(to: 10)
+
+        let finalQuery = lastVibesDoc != nil ? query.start(afterDocument: lastVibesDoc!) : query
+
+        // Get documents
+        let snapshot = try await finalQuery.getDocuments()
+        lastVibesDoc = snapshot.documents.last
+
+        // Parse documents
+        return snapshot.documents.compactMap { document in
+            try? document.data(as: Vibes.self)
         }
     }
 
@@ -350,86 +367,38 @@ class FirebaseService {
     func getImages(urlString: String) async -> UIImage? {
         let cacheKey = NSString(string: urlString)
 
-        // Try memory cache first
-        if let image = PersistenceManager.cache.object(forKey: cacheKey) {
-            print("Memory cache hit")
-            return image
+        // Check memory cache
+        if let cachedImage = PersistenceManager.cache.object(forKey: cacheKey) {
+            return cachedImage
         }
 
-        // Create a safe filename for disk storage
+        // Check disk cache
         let filename = createSafeFilename(from: urlString)
-
-        // Try disk cache next
-        if let image = loadImageFromDisk(withFilename: filename) {
-            print("Disk cache hit")
-            // Store in memory cache for faster access next time
-            PersistenceManager.cache.setObject(image, forKey: cacheKey)
-            return image
+        if let diskImage = loadImageFromDisk(withFilename: filename) {
+            PersistenceManager.cache.setObject(diskImage, forKey: cacheKey)
+            return diskImage
         }
 
-        // Download if not in any cache
+        // Download image
         guard let url = URL(string: urlString) else { return nil }
-        let config = URLSessionConfiguration.default
-        config.waitsForConnectivity = true
-        config.allowsCellularAccess = true
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
 
         do {
-            print("Downloading image")
-            let (data, _) = try await session.data(from: url)
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 30
+            config.timeoutIntervalForResource = 60
+            config.waitsForConnectivity = true
+
+            let (data, _) = try await URLSession(configuration: config).data(from: url)
             guard let image = UIImage(data: data) else { return nil }
 
-            // Cache in memory
+            // Cache image
             PersistenceManager.cache.setObject(image, forKey: cacheKey)
-
-            // Cache to disk
             saveImageToDisk(image, withFilename: filename)
 
             return image
         } catch {
-            print("Download error: \(error.localizedDescription)")
+            print("Image download error: \(error.localizedDescription)")
             return nil
-        }
-    }
-
-
-    // upload/update the users profile picture
-    func uploadProfilePic(image: Data?) {
-        guard let image = image else { return }
-        guard let auth = Auth.auth().currentUser else { return }
-        let id = auth.uid
-        let docRef = db.collection("Users").document(id)
-        let path = "Users_pictures/\(id)/images/profilePicture/profilePic.jpg"
-
-        // Create a storage reference from our storage service
-        let fileRef = storage.child(path)
-
-        _ = fileRef.putData(image, metadata: nil) { metadata, error in
-            if let error = error {
-                print("Error uploading image: \(error.localizedDescription)")
-            } else {
-                print("Image uploaded successfully!")
-                fileRef.downloadURL { (url, error) in
-                    guard let downloadURL = url else {
-                        // Uh-oh, an error occurred!
-                        return
-                    }
-                    docRef.getDocument { (snapshot, error) in
-                        if let document = snapshot {
-                            if document.exists {
-                                docRef.updateData(["photoURL": downloadURL.absoluteString])
-                                let changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-                                changeRequest?.photoURL = downloadURL
-                                changeRequest?.commitChanges { error in
-                                    // ...
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

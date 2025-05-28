@@ -31,7 +31,6 @@ class RVProfileImageView: UIImageView {
             guard let url = auth.photoURL?.absoluteString else { return }
             let profileImage = await FirebaseService.shared.getImages(urlString: url)
             image = profileImage ?? placeHolderImage
-            print("profile image view image = \(auth.photoURL?.absoluteString))")
         }
     }
 }

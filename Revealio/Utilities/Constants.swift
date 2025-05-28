@@ -5,6 +5,7 @@
 //  Created by hanif hussain on 01/12/2024.
 //
 import UIKit
+import SwiftUI
 
 enum DeviceTypes {
     static let idiom = UIDevice.current.userInterfaceIdiom
@@ -80,4 +81,46 @@ enum FirebaseCollections: String {
 
 enum StorageLocationPath: String {
     case cacheDirectoryName = "ImageCache"
+}
+
+
+// Available colors for drawing
+enum DrawingColors: CaseIterable {
+    case black
+    case darkGray
+    case gray
+    case lightGray
+    case red
+    case orange
+    case yellow
+    case green
+    case mint
+    case teal
+    case cyan
+    case blue
+    case indigo
+    case purple
+    case pink
+    case brown
+
+    var color: Color {
+        switch self {
+        case .black: return .black
+        case .darkGray: return Color(UIColor.darkGray)
+        case .gray: return .gray
+        case .lightGray: return Color(UIColor.lightGray)
+        case .red: return .red
+        case .orange: return .orange
+        case .yellow: return .yellow
+        case .green: return .green
+        case .mint: return .mint
+        case .teal: return .teal
+        case .cyan: return .cyan
+        case .blue: return .blue
+        case .indigo: return .indigo
+        case .purple: return .purple
+        case .pink: return .pink
+        case .brown: return .brown
+        }
+    }
 }

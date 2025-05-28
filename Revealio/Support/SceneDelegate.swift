@@ -1,14 +1,16 @@
 import UIKit
 import FirebaseAuth
+import DeviceCheck
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-    
+    let appAttestManager = AppAttestManager()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         configureNavigationBar()
+        PersistenceManager.setupWebViewCache()
         configureScene(windowScene: windowScene)
     }
     
@@ -24,6 +26,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let tabViewController = RVTabBarController()
             window.rootViewController = tabViewController
         } else {
+//            let tabViewController = RVTabBarController()
+//            window.rootViewController = tabViewController
             let loginVC = LoginVC()
             window.rootViewController = UINavigationController(rootViewController: loginVC)
         }

@@ -10,7 +10,7 @@ import FirebaseAuth
 class ChatsTableViewCell: UITableViewCell {
     private let containeriew = RVContentView()
     private let chatTextLabel = RVBodyLabel(textAlignment: .left)
-    private let senderLabel = RVLabel(font: UIFont.systemFont(ofSize: 14, weight: .bold), alignment: .left, textColor: .label, text: "")
+    private let senderLabel = RVLabel(font: UIFont.systemFont(ofSize: 18, weight: .bold), alignment: .left, textColor: .label, text: "")
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -37,7 +37,7 @@ class ChatsTableViewCell: UITableViewCell {
             senderLabel.topAnchor.constraint(equalTo: containeriew.topAnchor, constant: 5),
             senderLabel.leadingAnchor.constraint(equalTo: containeriew.leadingAnchor, constant: 5),
             senderLabel.trailingAnchor.constraint(equalTo: containeriew.trailingAnchor, constant: -5),
-            senderLabel.heightAnchor.constraint(equalToConstant: 16),
+            senderLabel.heightAnchor.constraint(equalToConstant: 20),
 
 
             chatTextLabel.topAnchor.constraint(equalTo: senderLabel.bottomAnchor, constant: 5),
@@ -63,8 +63,10 @@ class ChatsTableViewCell: UITableViewCell {
             chatTextLabel.text = lastMessage
         case MessageType.video:
             chatTextLabel.text = "Video"
-        case MessageType.image, MessageType.gif, MessageType.drawing:
+        case MessageType.image, MessageType.drawing:
             chatTextLabel.text = "Image"
+        case MessageType.gif:
+            chatTextLabel.text = "GIF"
         }
 
     }

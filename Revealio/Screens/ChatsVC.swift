@@ -2,10 +2,12 @@ import UIKit
 import Contacts
 // work here to get conversation documents and show them here
 class ChatsVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
+
     var alertVC: RVAlertVC!
     var loadingAnimationContainerView: UIView!
     private var chatsView = ChatListVC()
     private var contacts = [CNContact]()
+    private var contactVC: AddContactVC!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,7 +32,16 @@ class ChatsVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
     @objc func loadContactsVC() {
         Task {
             await grantContactPermission()
-            let contactVC = AddContactVC(contacts: self.contacts)
+            contactVC = AddContactVC(contacts: self.contacts)
+            contactVC.addContactCallback = { [weak self] contactNum in
+                guard let self = self else { return }
+                if contactVC != nil {
+                    self.contactVC.dismiss(animated: true)
+                    self.didSelectUser(nil, contactNumber: contactNum)
+                }
+            }
+            contactVC.modalTransitionStyle = .crossDissolve
+            contactVC.sheetPresentationController?.prefersGrabberVisible = true
             self.present(contactVC, animated: true)
         }
     }
@@ -92,8 +103,15 @@ class ChatsVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
 
 
 extension ChatsVC: ChatListVCProtocol {
-    func didSelectUser(_ chat: ConversationDocument) {
-        let messagingVC = MessagingVC(conversation: chat)
+    func didSelectUser(_ chat: ConversationDocument?) {
+        guard let chat else { return }
+        let messagingVC = MessagingVC(conversation: chat, contactNumber: nil)
+        messagingVC.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(messagingVC, animated: true)
+    }
+
+    func didSelectUser(_ chat: ConversationDocument?, contactNumber: String?) {
+        let messagingVC = MessagingVC(conversation: chat, contactNumber: contactNumber)
         messagingVC.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(messagingVC, animated: true)
     }

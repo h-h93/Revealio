@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseAuth
 
 class SettingsVC: UIViewController, RVDataLoadingVC {
     var loadingAnimationContainerView: UIView!
@@ -12,6 +13,7 @@ class SettingsVC: UIViewController, RVDataLoadingVC {
 
     private func configure() {
         view.backgroundColor = .systemBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Sign out?", image: nil, target: self, action: #selector(logOut))
         addChild(settingsViewController)
         view.addSubview(settingsViewController.view)
         settingsViewController.view.pinToSafeAreaEdges(of: view)
@@ -19,6 +21,15 @@ class SettingsVC: UIViewController, RVDataLoadingVC {
 
     }
 
-    
-    
+
+    @objc func logOut() {
+        do {
+            try Auth.auth().signOut()
+            let loginVC = LoginVC()
+            navigationController?.pushViewController(loginVC, animated: true)
+        } catch {
+            print("Error signing out: \(error)")
+        }
+    }
+
 }

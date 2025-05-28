@@ -1,10 +1,15 @@
-//
-//  UICollectionViewController+ext.swift
-//  Revealio
-//
-//  Created by hanif hussain on 13/02/2025.
-//
+
 import UIKit
+
+extension UICollectionViewProtocol {
+
+    func presentRVAlert(title: String, message: String, buttonTitle: String) {
+        alertVC = RVAlertVC(title: title, message: message, buttonTitle: buttonTitle)
+        alertVC.modalPresentationStyle = .overFullScreen
+        alertVC.modalTransitionStyle = .crossDissolve
+        present(alertVC, animated: true)
+    }
+}
 
 extension UICollectionView {
     func scrollToBottom<T>(collection: [T]) {

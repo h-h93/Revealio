@@ -87,6 +87,9 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
                                 createProfileVC.modalPresentationStyle = .fullScreen
                                 createProfileVC.modalTransitionStyle = .crossDissolve
                                 self.navigationController?.pushViewController(createProfileVC, animated: true)
+                                createProfileVC.completionCallBack = {
+                                    self.verificationCompleteClosure?()
+                                }
                             } else {
                                 // log user in and update tabbar controller
                                 print("existing user")

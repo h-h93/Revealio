@@ -45,7 +45,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             let myCell = SettingsProfileCell(style: .default, reuseIdentifier: "ProfileCell")
-            myCell.set()
+            myCell.setImage()
             return myCell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: "ProfileCell") as! UITableViewCell

@@ -1,9 +1,3 @@
-//
-//  EditProfileDetailVC.swift
-//  Revealio
-//
-//  Created by hanif hussain on 16/01/2025.
-//
 import UIKit
 import Combine
 import PhotosUI
@@ -24,6 +18,7 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     private var cancellables = Set<AnyCancellable>()
     private var imageURL: String?
     private var pickerTapGesture: UITapGestureRecognizer?
+    var completionCallBack: (() -> Void)?
 
     init(phoneNumber: String) {
         super.init(nibName: nil, bundle: nil)
@@ -46,6 +41,9 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     
     private func configure() {
         view.backgroundColor = .systemBackground
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self, selector: #selector(adjustForKeyboard), name: UIResponder.keyboardWillHideNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(adjustForKeyboard), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneTapped))
         navigationItem.hidesBackButton = true
         scrollView.addSubview(contentView)
@@ -160,6 +158,7 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         if imageURL != nil { FirebaseService.shared.uploadProfilePic(image: profilePictureView.image?.jpegData(compressionQuality: 0.6)) }
         let user = User(id: id, displayName: username, photoURL: self.imageURL, createdAt: Date.now, lastSeen: Date.now, phoneNumber: phoneNumber)
         FirebaseService.shared.createInitialUserEntry(user: user)
+        completionCallBack?()
         self.dismiss(animated: true)
     }
 }
@@ -196,14 +195,25 @@ extension RVEditProfileDetailVC: UIImagePickerControllerDelegate, UINavigationCo
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
-        
         guard let image = info[.editedImage] as? UIImage else {
-            print("No image found")
             return
         }
-        
-        // print out the image size as a test
-        print(image.size)
+    }
+
+
+    @objc func adjustForKeyboard(notification: Notification) {
+        guard let keyboardValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
+
+        let keyboardScreenEndFrame = keyboardValue.cgRectValue
+        let keyboardViewEndFrame = view.convert(keyboardScreenEndFrame, from: view.window)
+
+        if notification.name == UIResponder.keyboardWillHideNotification {
+            scrollView.contentInset = .zero
+        } else {
+            scrollView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardViewEndFrame.height - view.safeAreaInsets.bottom, right: 0)
+        }
+
+        scrollView.scrollIndicatorInsets = scrollView.contentInset
     }
 }
 

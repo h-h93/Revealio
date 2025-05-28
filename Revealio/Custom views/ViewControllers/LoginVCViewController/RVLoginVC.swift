@@ -35,7 +35,12 @@ class RVLoginVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
     //    }()
     
     weak var rvLoginDelegate: RVLoginViewDelegateProtocol?
-    
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+    }
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -204,10 +209,7 @@ extension RVLoginVC: UIPopoverPresentationControllerDelegate, RVPickerVCDelegate
     }
     
     
-    func adaptivePresentationStyle(
-        for controller: UIPresentationController,
-        traitCollection: UITraitCollection
-    ) -> UIModalPresentationStyle {
+    func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection ) -> UIModalPresentationStyle {
         // Return no adaptive presentation style,
         // use default presentation behaviour
         return .none

@@ -75,7 +75,7 @@ class RVMessageLabel: UILabel {
         backgroundColor = .clear
         textColor = UIColor.white
         numberOfLines = 0
-        font = UIFont.systemFont(ofSize: 15)
+        font = UIFont.systemFont(ofSize: 15, weight: .regular)
         translatesAutoresizingMaskIntoConstraints = false
         lineBreakMode = .byWordWrapping
         isUserInteractionEnabled = true

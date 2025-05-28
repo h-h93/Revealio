@@ -1,15 +1,3 @@
-//
-//  MotionManager.swift
-//  ScratchCard
-//
-//  Created by Anup D'Souza on 01/09/24.
-//  🕸️ https://www.anupdsouza.com
-//  🔗 https://twitter.com/swift_odyssey
-//  👨🏻‍💻 https://github.com/anupdsouza
-//  ☕️ https://www.buymeacoffee.com/adsouza
-//  🫶🏼 https://patreon.com/adsouza
-//
-
 import Foundation
 import CoreMotion
 import SwiftUI

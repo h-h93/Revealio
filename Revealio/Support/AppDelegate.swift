@@ -1,3 +1,10 @@
+//
+//  AppDelegate.swift
+//  Revealio
+//
+//  Created by hanif hussain on 29/11/2024.
+//
+
 import UIKit
 import Firebase
 
@@ -6,10 +13,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        let providerFactory = AppCheckDebugProviderFactory()
-        AppCheck.setAppCheckProviderFactory(providerFactory)
         FirebaseApp.configure()
+        // uncomment below for debug token for simulator
+//        let providerFactory = AppCheckDebugProviderFactory()
+//        AppCheck.setAppCheckProviderFactory(providerFactory)
+        setupAppAttest()
         return true
+    }
+
+
+    func setupAppAttest() {
+        let appAttestManager = AppAttestManager()
+        AppCheck.setAppCheckProviderFactory(appAttestManager)
     }
 
     // MARK: UISceneSession Lifecycle

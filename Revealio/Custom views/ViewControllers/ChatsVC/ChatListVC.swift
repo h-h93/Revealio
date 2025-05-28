@@ -7,10 +7,6 @@
 import UIKit
 import InputBarAccessoryView
 
-protocol ChatListVCProtocol: AnyObject {
-    func didSelectUser(_ chat: ConversationDocument)
-}
-
 class ChatListVC: UIViewController {
     private let tableView = RVTableView()
     private var user: String!
@@ -78,6 +74,6 @@ extension ChatListVC: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let recipient = datasource.chats[indexPath.row]
-        delegate?.didSelectUser(datasource.chats[indexPath.row])
+        delegate?.didSelectUser(recipient)
     }
 }
