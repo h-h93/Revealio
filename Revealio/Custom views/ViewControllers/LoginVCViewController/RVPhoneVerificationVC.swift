@@ -7,6 +7,7 @@
 import UIKit
 import Combine
 import FirebaseAuth
+import PhoneNumberKit
 
 class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewControllerProtocol {
     var alertVC: RVAlertVC!
@@ -18,30 +19,30 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
 
     private var cancellablesSubscription = Set<AnyCancellable>()
     @Published private var verificationText: String?
-    
-    
+
+
     init (verificationID: String, phoneNumber: String) {
         super.init(nibName: nil, bundle: nil)
         self.verificationID = verificationID
         self.phoneNumber = phoneNumber
     }
-    
-    
+
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    
+
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
         startProcesingInput()
     }
-    
-    
+
+
     private func configure() {
         view.backgroundColor = .systemBackground
-        
+
         verificationCodeTextField.addBottomBorder(color: .tertiaryLabel)
         verificationCodeTextField.autocorrectionType = .no
         verificationCodeTextField.keyboardType = .phonePad
@@ -49,11 +50,11 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
         verificationCodeTextField.autocapitalizationType = .none
         verificationCodeTextField.placeholder = "Verification Code"
         verificationCodeTextField.textAlignment = .center
-        
+
         verificationCodeTextField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
-        
+
         view.addSubviews(verificationCodeTextField)
-        
+
         NSLayoutConstraint.activate([
             verificationCodeTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0),
             verificationCodeTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -61,8 +62,8 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
             verificationCodeTextField.widthAnchor.constraint(equalToConstant: 200)
         ])
     }
-    
-    
+
+
     func startProcesingInput() {
         $verificationText
         // use debounce to publish to delay for 800 milliseconds before publishing
@@ -100,13 +101,13 @@ class RVPhoneVerificationVC: UIViewController, RVDataLoadingVC, UIViewController
                     case .failure(let error):
                         self.presentRVAlert(title: "Oops", message: error.rawValue, buttonTitle: "OK")
                     }
-                    
+
                 })
             })
             .store(in: &cancellablesSubscription)
     }
-    
-    
+
+
     @objc func textChanged() { verificationText = verificationCodeTextField.text }
     @objc func doneTapped() {}
 }

@@ -74,6 +74,6 @@ extension ChatListVC: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let recipient = datasource.chats[indexPath.row]
-        delegate?.didSelectUser(recipient)
+        delegate?.didSelectUser(recipient, contactNumber: nil)
     }
 }

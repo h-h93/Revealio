@@ -18,6 +18,7 @@
 		673BD2EA2D250A7000A93340 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 673BD2E92D250A7000A93340 /* FirebaseMessaging */; };
 		673BD2EC2D250A7000A93340 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 673BD2EB2D250A7000A93340 /* FirebaseStorage */; };
 		6761F1C22DC595EC0007C303 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 6761F1C12DC595EC0007C303 /* Lottie */; };
+		678AA66A2DEAD63A00C9C65A /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 678AA6692DEAD63A00C9C65A /* PhoneNumberKit */; };
 		67B581D02CFA13D9001F6EB1 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 67B581CF2CFA13D9001F6EB1 /* FirebaseAnalytics */; };
 		67B581D22CFA13D9001F6EB1 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */ = {isa = PBXBuildFile; productRef = 67B581D12CFA13D9001F6EB1 /* FirebaseAnalyticsOnDeviceConversion */; };
 		67B581D42CFA13D9001F6EB1 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 67B581D32CFA13D9001F6EB1 /* FirebaseAppCheck */; };
@@ -93,6 +94,7 @@
 				67B581D22CFA13D9001F6EB1 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */,
 				673BD2EC2D250A7000A93340 /* FirebaseStorage in Frameworks */,
 				673BD2E02D250A7000A93340 /* FirebaseCore in Frameworks */,
+				678AA66A2DEAD63A00C9C65A /* PhoneNumberKit in Frameworks */,
 				673BD2E42D250A7000A93340 /* FirebaseFirestore in Frameworks */,
 				673BD2E22D250A7000A93340 /* FirebaseDatabase in Frameworks */,
 				67B581D82CFA1840001F6EB1 /* StoreKit.framework in Frameworks */,
@@ -183,6 +185,7 @@
 				670E99302D583A6900965912 /* InputBarAccessoryView */,
 				670E993B2D5C5DFA00965912 /* AsyncAlgorithms */,
 				6761F1C12DC595EC0007C303 /* Lottie */,
+				678AA6692DEAD63A00C9C65A /* PhoneNumberKit */,
 			);
 			productName = Revealio;
 			productReference = 67B5817B2CFA102B001F6EB1 /* Revealio.app */;
@@ -271,6 +274,7 @@
 				670E992F2D583A6900965912 /* XCRemoteSwiftPackageReference "InputBarAccessoryView" */,
 				670E993A2D5C5DFA00965912 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				6761F1C02DC595EC0007C303 /* XCRemoteSwiftPackageReference "lottie-spm" */,
+				678AA6682DEAD63A00C9C65A /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67B5817C2CFA102B001F6EB1 /* Products */;
@@ -693,6 +697,14 @@
 				minimumVersion = 4.5.1;
 			};
 		};
+		678AA6682DEAD63A00C9C65A /* XCRemoteSwiftPackageReference "PhoneNumberKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/marmelroy/PhoneNumberKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.2;
+			};
+		};
 		67B581CE2CFA13D9001F6EB1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -758,6 +770,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6761F1C02DC595EC0007C303 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
+		};
+		678AA6692DEAD63A00C9C65A /* PhoneNumberKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 678AA6682DEAD63A00C9C65A /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
+			productName = PhoneNumberKit;
 		};
 		67B581CF2CFA13D9001F6EB1 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;

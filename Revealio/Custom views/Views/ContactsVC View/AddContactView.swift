@@ -6,12 +6,14 @@
 //
 import UIKit
 import Contacts
+import PhoneNumberKit
+import FirebaseAuth
 
 protocol AddContactViewDelegate: AnyObject {
     func didselectContact(contactNumber: String)
 }
 
-class AddContactView: UIView, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+class AddContactView: UIView, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, StringToPhoneConversion {
     private var collectionView: RVCollectionView!
     private var dataSource: ContactsDataSource!
     weak var addContactDelegate: AddContactViewDelegate?
@@ -52,16 +54,17 @@ class AddContactView: UIView, UICollectionViewDelegate, UICollectionViewDelegate
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let addContactDelegate else { return }
         do {
+            guard let auth = Auth.auth().currentUser?.phoneNumber else { return }
             // check if contact has account in firebase
             let contact = contacts[indexPath.item]
             guard var number: String = contact.phoneNumbers.first?.value.stringValue else { return  }
-            number = number.removeCountryCode(from: number) ?? ""
-            guard let phoneNumberMinusCountryCode = number.extractLocalNumber(from: number) else { return  }
+            guard let phoneNumber = convertToPhoneNumber(string: number) else { return }
+            let parsedPhonenumber = "+\(phoneNumber.countryCode)" + "\(phoneNumber.nationalNumber)"
+            if parsedPhonenumber == auth { return }
             let field = "phoneNumber"
-            let record = phoneNumberMinusCountryCode
             Task {
-                let exist = try await FirebaseService.shared.checkCollectionFieldRecordExists(collectionName: FirebaseCollections.users.rawValue, fieldName: field, record: record)
-                if exist { addContactDelegate.didselectContact(contactNumber: record) }
+                let exist = try await FirebaseService.shared.checkCollectionFieldRecordExists(collectionName: FirebaseCollections.users.rawValue, fieldName: field, record: parsedPhonenumber)
+                if exist { addContactDelegate.didselectContact(contactNumber: parsedPhonenumber) }
             }
         }
     }

@@ -2,6 +2,7 @@ import UIKit
 import Combine
 import PhotosUI
 import FirebaseAuth
+import PhoneNumberKit
 
 class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
     var loadingAnimationContainerView: UIView!
@@ -24,21 +25,21 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         super.init(nibName: nil, bundle: nil)
         self.phoneNumber = phoneNumber
     }
-    
-    
+
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    
+
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
         configureProfilePictureView()
         configureTextFields()
     }
-    
-    
+
+
     private func configure() {
         view.backgroundColor = .systemBackground
         let notificationCenter = NotificationCenter.default
@@ -51,22 +52,23 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         hideKeyboardWhenTappedAround()
         scrollView.pinToSafeAreaEdges(of: view)
         contentView.pinToEdges(of: scrollView)
-        
+
         NSLayoutConstraint.activate([
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             contentView.heightAnchor.constraint(equalToConstant: 800)
         ])
     }
-    
-    
+
+
     private func configureProfilePictureView() {
         imagePicker.delegate = self
         if pickerTapGesture != nil {
             self.pickerTapGesture = nil
         }
         pickerTapGesture = UITapGestureRecognizer(target: self, action: #selector(uploadImageTapped))
-        
+
         profilePictureView.isUserInteractionEnabled = true
+        profilePictureView.contentMode = .scaleAspectFill
         profilePictureView.layer.masksToBounds = false
         profilePictureView.layer.borderColor = UIColor.systemGray.cgColor
         profilePictureView.layer.borderWidth = 1
@@ -75,35 +77,35 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         profilePictureView.layer.cornerRadius = profilePictureView.frame.height / 2
         profilePictureView.addGestureRecognizer(pickerTapGesture!)
         profilePictureView.image = Images.defaultProfileImage
-        
+
         addImageButton.configuration?.image = UIImage(systemName: "plus.circle.fill")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal)
         addImageButton.layer.cornerRadius = 0.5 * addImageButton.bounds.size.width
         addImageButton.clipsToBounds = true
         addImageButton.addTarget(self, action: #selector(uploadImageTapped), for: .touchUpInside)
-        
+
         contentView.addSubviews(profilePictureView, addImageButton)
-        
+
         NSLayoutConstraint.activate([
             profilePictureView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
             profilePictureView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             profilePictureView.heightAnchor.constraint(equalToConstant: profileImageWidthHeight),
             profilePictureView.widthAnchor.constraint(equalToConstant: profileImageWidthHeight),
-            
+
             addImageButton.topAnchor.constraint(equalTo: profilePictureView.bottomAnchor, constant: -30),
             addImageButton.leadingAnchor.constraint(equalTo: profilePictureView.centerXAnchor, constant: 60),
             addImageButton.widthAnchor.constraint(equalToConstant: 50),
             addImageButton.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
-    
-    
+
+
     private func configureTextFields() {
         usernameTextField.placeholder = "Enter Display Name 🙂"
         usernameTextField.textAlignment = .center
         usernameTextField.addBottomBorder()
         hideKeyboardWhenTappedAround()
         contentView.addSubview(usernameTextField)
-        
+
         NSLayoutConstraint.activate([
             usernameTextField.topAnchor.constraint(equalTo: profilePictureView.bottomAnchor, constant: 80),
             usernameTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
@@ -111,8 +113,8 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
             usernameTextField.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
-    
-    
+
+
     @objc private func uploadImageTapped(sender: Any) {
         let ac = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         ac.addAction(UIAlertAction(title: "Take Photo", style: .default, handler: { action in
@@ -121,7 +123,7 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
             self.imagePicker.delegate = self
             self.present(self.imagePicker, animated: true)
         }))
-        
+
         ac.addAction(UIAlertAction(title: "Choose Photo", style: .default, handler: { action in
             //0 - unlimited 1 - default
             self.phPickerConfig.selectionLimit = 1
@@ -130,9 +132,9 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
             self.phPickerVC.delegate = self
             self.present(self.phPickerVC, animated: true)
         }))
-        
+
         ac.addAction(UIAlertAction.init(title: "Cancel", style: .cancel, handler: nil))
-        
+
         if let sender = sender as? UIImageView ?? sender as? UIButton {
             //If you want work actionsheet on ipad then you have to use popoverPresentationController to present the actionsheet, otherwise app will crash in iPad
             switch UIDevice.current.userInterfaceIdiom {
@@ -146,12 +148,11 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
         }
         self.present(ac, animated: true, completion: nil)
     }
-    
-    
+
+
     // upload image to firebase store and save that url as the photo url work on that
     @objc private func doneTapped() {
         guard let auth = Auth.auth().currentUser else { return }
-        guard let phoneNumber = self.phoneNumber else { return }
         guard let username = usernameTextField.text else { return }
         if usernameTextField.isEmpty { return }
         let id = auth.uid
@@ -165,11 +166,11 @@ class RVEditProfileDetailVC: UIViewController, RVDataLoadingVC {
 
 
 extension RVEditProfileDetailVC: UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
-    
+
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         if let itemprovider = results.first?.itemProvider{
-            
+
             if itemprovider.canLoadObject(ofClass: UIImage.self){
                 itemprovider.loadObject(ofClass: UIImage.self) { image , error  in
                     if let error{
@@ -191,8 +192,8 @@ extension RVEditProfileDetailVC: UIImagePickerControllerDelegate, UINavigationCo
             }
         }
     }
-    
-    
+
+
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
         guard let image = info[.editedImage] as? UIImage else {
@@ -215,10 +216,4 @@ extension RVEditProfileDetailVC: UIImagePickerControllerDelegate, UINavigationCo
 
         scrollView.scrollIndicatorInsets = scrollView.contentInset
     }
-}
-
-@available(iOS 17, *)
-#Preview {
-    let vc = RVEditProfileDetailVC(phoneNumber: "07930632752")
-    return vc
 }

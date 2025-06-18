@@ -162,29 +162,8 @@ class RVMessageCell: UICollectionViewCell {
             messageTextLabel.sizeToFit()
             messageTextLabel.alignTextToTop()
             messageBubbleView.updateDrawingFill(isText: true)
-        } else if message.type == .image {
-            messageTextLabel.isHidden = true
-            imageView.isHidden = false
-            webView.isHidden = true
-            guard let urlString = message.mediaUrl else { return }
-            messageBubbleWidthAnchor?.constant = 220
-            messageBubbleView.backgroundColor = .systemBackground
-            messageBubbleView.borderWidth = 3
-            imageView.setImage(url: urlString)
-            messageBubbleView.updateDrawingFill(isText: false)
-        } else if message.type == .video || message.type == .gif {
-            messageTextLabel.isHidden = true
-            imageView.isHidden = true
-            webView.isHidden = false
-            guard let urlString = message.mediaUrl else { return }
-            messageBubbleWidthAnchor?.constant = 220
-            messageBubbleView.backgroundColor = .systemBackground
-            messageBubbleView.borderWidth = 3
-            self.setNeedsLayout()
-            self.layoutIfNeeded()
-            if message.type == .video { loadMediaInWebView(urlString: urlString, type: .video) }
-            else { loadMediaInWebView(urlString: urlString, type: .gif) }
-            messageBubbleView.updateDrawingFill(isText: false)
+        } else {
+            configureMediaView(message: message)
         }
 
         //        let strokeTextAttributes = [
@@ -196,6 +175,32 @@ class RVMessageCell: UICollectionViewCell {
         self.layoutIfNeeded()
         timestampLabel.text = date
         setNeedsLayout()
+    }
+
+
+    private func configureMediaView(message: Message) {
+        if message.type == .image {
+            messageTextLabel.isHidden = true
+            imageView.isHidden = false
+            webView.isHidden = true
+        } else {
+            messageTextLabel.isHidden = true
+            imageView.isHidden = true
+            webView.isHidden = false
+        }
+        guard let urlString = message.mediaUrl else { return }
+        messageBubbleWidthAnchor?.constant = 220
+        messageBubbleView.backgroundColor = .systemBackground
+        messageBubbleView.borderWidth = 3
+        if message.type == .image {
+            imageView.setImage(url: urlString)
+        } else {
+            if message.type == .video { webView.loadMediaInWebView(urlString: urlString, type: .video) }
+            else { webView.loadMediaInWebView(urlString: urlString, type: .gif) }
+        }
+
+        messageBubbleView.updateDrawingFill(isText: false)
+
     }
 
 
@@ -219,71 +224,6 @@ class RVMessageCell: UICollectionViewCell {
             if self.messageBubbleWidthAnchor?.constant ?? 0 > maxWidth {
                 self.messageBubbleWidthAnchor?.constant = maxWidth
             }
-        }
-    }
-}
-
-
-extension RVMessageCell {
-    private func loadMediaInWebView(urlString: String, type: MessageType) {
-        print("🔍 Loading: \(urlString)")
-
-        guard let url = URL(string: urlString) else { return }
-
-        if type == .gif {
-            // Check if URL is already cached
-            let request = URLRequest(url: url)
-            if let cachedResponse = URLCache.shared.cachedResponse(for: request) {
-                print("✅ GIF loaded from cache - Size: \(cachedResponse.data.count) bytes")
-            } else {
-                print("🌐 GIF loading from network")
-            }
-
-            var cacheRequest = URLRequest(url: url)
-            cacheRequest.cachePolicy = .returnCacheDataElseLoad
-            webView.load(cacheRequest)
-
-        } else if type == .video {
-            print("🌐 Video loading from network (no caching)")
-            let html = """
-            <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-                        html, body {
-                            width: 100%;
-                            height: 100%;
-                            overflow: hidden;
-                            background: transparent;
-                        }
-                        body {
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                        }
-                        video {
-                            width: 100%;
-                            height: 100%;
-                            object-fit: cover;
-                            border-radius: 10px;
-                            display: block;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <video controls playsinline muted preload="metadata">
-                        <source src="\(urlString)" type="video/mp4">
-                    </video>
-                </body>
-            </html>
-            """
-            webView.loadHTMLString(html, baseURL: url)
         }
     }
 }

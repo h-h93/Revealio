@@ -147,6 +147,18 @@ class FirebaseService: FirebaseServiceProtocol {
     }
 
 
+    func getDocument<T: Decodable>(collectionName: String, filterBy: String) async throws -> [T] {
+        let collectionRef = db.collection(collectionName)
+        let query = collectionRef.whereField(filterBy, isGreaterThan: "")
+
+        let snapshot = try await query.getDocuments()
+
+        return snapshot.documents.compactMap { document in
+            return try? document.data(as: T.self)
+        }
+    }
+
+
     func checkDocumentExists(collectionName: String, fieldName: String?, exists: @escaping (Bool) -> Void) {
         guard let fieldName = fieldName else {
             exists(false)
@@ -314,7 +326,6 @@ class FirebaseService: FirebaseServiceProtocol {
                     break
                 }
 
-                print("The type is \(fileExtension)")
                 // Create unique path
                 let id = UUID().uuidString
                 let mediaStoragePath = "\(toConversationID)/media/\(toConversationID)-\(id).\(fileExtension.lowercased())"
@@ -339,6 +350,46 @@ class FirebaseService: FirebaseServiceProtocol {
                 // Consider whether to throw or continue with next image
             }
         }
+    }
+
+
+    func sendVibes(vibes: Data, senderId: String) async throws {
+        guard let user = Auth.auth().currentUser else { throw RVError.notLoggedIn }
+        let encoder = JSONEncoder()
+
+        do {
+            // Set up metadata
+            let metadata = StorageMetadata()
+            metadata.contentType = MessageType.image.rawValue
+            let fileExtension = vibes.fileExtension
+            var type = MessageType.gif
+            switch fileExtension.lowercased() {
+            case "gif":
+                type = .gif
+            case "jpg", "jpeg", "png", "webp":
+                type = .image
+            case "mp4", "mov", "avi", "m4v":
+                type = .video
+            default:
+                break
+            }
+
+            // Create unique path
+            let id = UUID().uuidString
+            let mediaStoragePath = "\(id)/media/\(id).\(fileExtension.lowercased())"
+            let ref = storage.child(mediaStoragePath)
+
+            // Upload and wait for completion
+            _ = try await ref.putDataAsync(vibes, metadata: metadata)
+
+            // Get download URL and send message
+            let mediaURL = try await ref.downloadURL().absoluteString
+            let vibe = Vibes(from: user.uid, to: senderId, location: mediaURL, timestamp: Date.now, viewed: false, type: type)
+        } catch {
+            throw RVError.unableToCompleteRequest
+        }
+
+        try await db.collection(FirebaseCollections.vibes.rawValue).addDocument(data: try Firestore.Encoder().encode(vibes))
     }
 
 

@@ -6,5 +6,6 @@ struct Vibes: Codable, Hashable {
     var location: String
     var timestamp: Date
     var viewed: Bool
+    var type: MessageType
 }
 

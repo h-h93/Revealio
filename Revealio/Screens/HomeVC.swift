@@ -1,11 +1,12 @@
 import UIKit
 import SwiftUI
 import FirebaseAuth
-class HomeVC: UIViewController, RVDataLoadingVC {
+class HomeVC: UIViewController, RVDataLoadingVC, DrawingVCDelegate, AddContactViewDelegate {
     var loadingAnimationContainerView: UIView!
     private var collectionView: RVCollectionView!
     private var scratchView: RVScratchView!
-    
+    private var contactVC: AddContactVC!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
@@ -33,12 +34,22 @@ class HomeVC: UIViewController, RVDataLoadingVC {
             scratchViewContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             scratchViewContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
-        
-        
     }
 
 
     @objc private func handleAddButton() {
+        //let alertVC = UIAlertController(title: <#T##String?#>, message: <#T##String?#>, preferredStyle: <#T##UIAlertController.Style#>)
+
+
+    }
+
+
+    func didFinishDrawing(with image: UIImage) {
+
+    }
+
+
+    func didselectContact(contactNumber: String) {
 
     }
 }
